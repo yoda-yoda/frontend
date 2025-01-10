@@ -60,6 +60,17 @@ const Tiptap = () => {
 
   const extendedMarkdownSerializerNodes = {
     ...defaultMarkdownSerializer.nodes,
+    bulletList(state, node) {
+        state.renderList(node, "   ", () => "* ");
+      },
+    orderedList(state, node) {
+        const start = node.attrs.start || 1; // 시작 번호 (기본값 1)
+        const delimiter = ". "; // 번호와 텍스트 사이의 구분자
+        state.renderList(node, "   ", (index) => `${start + index}${delimiter}`);
+      },
+      listItem(state, node) {
+        state.renderContent(node);
+      },
     codeBlock(state, node) {
       state.write(`\`\`\`${node.attrs.language || ""}\n`);
       state.text(node.textContent, false);
