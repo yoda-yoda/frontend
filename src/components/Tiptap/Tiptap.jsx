@@ -7,6 +7,9 @@ import TableRow from "@tiptap/extension-table-row";
 import TableCell from "@tiptap/extension-table-cell";
 import TableHeader from "@tiptap/extension-table-header";
 import Image from "@tiptap/extension-image";
+import BulletList from "@tiptap/extension-bullet-list";
+import OrderedList from "@tiptap/extension-ordered-list";
+import ListItem from "@tiptap/extension-list-item";
 import { all, createLowlight } from "lowlight";
 import {
   MarkdownSerializer,
@@ -18,26 +21,6 @@ import "./Tiptap.css";
 
 // lowlight 설정
 const lowlight = createLowlight(all);
-
-const extendedMarkdownSerializerNodes = {
-  ...defaultMarkdownSerializer.nodes,
-  bulletList(state, node) {
-    state.renderList(node, "  ", () => "* ");
-  },
-  orderedList(state, node) {
-    state.renderList(node, "   ", (index) => `${index + 1}. `);
-  },
-  listItem(state, node) {
-    state.renderContent(node);
-  },
-  codeBlock(state, node) {
-    state.write(`\`\`\`${node.attrs.language || ""}\n`);
-    state.text(node.textContent, false);
-    state.ensureNewLine();
-    state.write("```");
-    state.closeBlock(node);
-  },
-};
 
 const Tiptap = () => {
   const [dropdownVisible, setDropdownVisible] = useState(false);
@@ -110,6 +93,9 @@ const Tiptap = () => {
     extensions: [
       StarterKit.configure({
         codeBlock: false, // 기본 코드 블록 비활성화
+        orderedList: false, // 기본 순서 없는 목록 비활성화
+        bulletList: false, // 기본 순서 있는 목록 비활성화
+        listItem: false, // 기본 리스트 아이템 비활성화
       }),
       CodeBlockLowlight.configure({
         lowlight, // lowlight 문법 강조 사용
@@ -121,6 +107,9 @@ const Tiptap = () => {
       TableCell,
       TableHeader,
       Image,
+      BulletList,
+      OrderedList,
+      ListItem,
     ],
     content: `
       <h1>Markdown Example</h1>
@@ -133,7 +122,7 @@ const Tiptap = () => {
       // Markdown 직렬화
       const serializer = new MarkdownSerializer(
         extendedMarkdownSerializerNodes,
-        defaultMarkdownSerializer.marks
+        extendedMarkdownSerializerMarks
       );
       const markdownContent = serializer.serialize(editor.state.doc);
       setMarkdown(markdownContent);
@@ -190,7 +179,7 @@ const Tiptap = () => {
   return (
     <div className="container">
       <h3 className="heading">Markdown Editor</h3>
-      <div className="editor-container">
+      <div className="editor-container no-tailwind">
         <EditorContent editor={editor} />
         {dropdownVisible && (
           <ul

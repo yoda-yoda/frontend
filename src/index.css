@@ -1,3 +1,99 @@
+@import 'tailwindcss/base';
+@import 'tailwindcss/components';
+@import 'tailwindcss/utilities';
+
+@layer base {
+  .no-tailwind * {
+    /* Tailwind 스타일의 일부만 초기화 */
+    font-size: inherit;
+    font-family: inherit;
+    color: inherit;
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  .no-tailwind {
+    /* 기존 스타일 유지 */
+    font-family: Arial, sans-serif;
+    /* 기존 CSS 폰트 */
+    line-height: 1.5;
+    /* 기존 CSS 줄 높이 */
+  }
+
+  /* Heading 스타일 */
+  .no-tailwind h1 {
+    font-size: 2rem;
+    font-weight: bold;
+  }
+
+  .no-tailwind h2 {
+    font-size: 1.75rem;
+    font-weight: bold;
+  }
+
+  .no-tailwind h3 {
+    font-size: 1.5rem;
+    font-weight: bold;
+  }
+
+  .no-tailwind h4 {
+    font-size: 1.25rem;
+    font-weight: bold;
+  }
+
+  .no-tailwind h5 {
+    font-size: 1rem;
+    font-weight: bold;
+  }
+
+  .no-tailwind h6 {
+    font-size: 0.875rem;
+    font-weight: bold;
+  }
+
+  /* Paragraph 스타일 */
+  .no-tailwind p {
+    margin-bottom: 1rem;
+  }
+
+  /* 불릿 스타일 */
+  .no-tailwind ul {
+    list-style-type: disc;
+    margin-left: 2rem;
+  }
+
+  .no-tailwind ul ul {
+    list-style-type: circle;
+    /* 하위 불릿은 원형 */
+    margin-left: 2rem;
+  }
+
+  .no-tailwind ul ul ul {
+    list-style-type: square;
+    /* 더 하위 불릿은 네모 */
+    margin-left: 2rem;
+  }
+
+  /* 숫자 리스트 스타일 */
+  .no-tailwind ol {
+    list-style-type: decimal;
+    margin-left: 2rem;
+  }
+
+  .no-tailwind ol ol {
+    list-style-type: lower-alpha;
+    /* 하위 숫자 리스트는 소문자 알파벳 */
+    margin-left: 2rem;
+  }
+
+  .no-tailwind ol ol ol {
+    list-style-type: lower-roman;
+    /* 더 하위 리스트는 로마 숫자 */
+    margin-left: 2rem;
+  }
+}
+
 body {
   margin: 0;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
