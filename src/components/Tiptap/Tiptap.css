@@ -4,6 +4,49 @@
     padding: 20px;
 }
 
+.ProseMirror {
+    width: 100%;
+    height: 100%;
+    outline: none;
+    inline-height: 1.5;
+    margin-bottom: 1em;
+
+}
+
+.ProseMirror h1,
+.ProseMirror h2,
+.ProseMirror h3,
+.ProseMirror h4,
+.ProseMirror h5,
+.ProseMirror h6 {
+    margin-top: 1.5em;
+    /* 제목 위쪽 간격 조정 */
+    margin-bottom: 0.5em;
+    /* 제목 아래쪽 간격 조정 */
+}
+
+.ProseMirror ul,
+.ProseMirror ol {
+    margin-top: 1em;
+    /* 리스트 위쪽 간격 조정 */
+    margin-bottom: 1em;
+    /* 리스트 아래쪽 간격 조정 */
+    padding-left: 2em;
+    /* 리스트 아이템 들여쓰기 */
+}
+
+.ProseMirror li {
+    margin-bottom: 0.5em;
+    /* 리스트 아이템 간의 간격 조정 */
+}
+
+.ProseMirror pre {
+    margin-top: 1em;
+    /* 코드 블록 위쪽 간격 조정 */
+    margin-bottom: 1em;
+    /* 코드 블록 아래쪽 간격 조정 */
+}
+
 .editor {
     border: 1px solid #ddd;
     border-radius: 8px;
@@ -24,6 +67,7 @@ pre {
 
 pre code {
     background-color: #2d2d2d;
+    color: #f8f8f2;
     display: block;
     font-family: "Fira Code", monospace;
     white-space: pre;
@@ -55,19 +99,21 @@ table {
     width: 100%;
     border-collapse: collapse;
     /* 셀 간 간격 제거 */
-    margin: 16px 0;
+    margin: 16px;
 }
 
 th,
 td {
-    border: 1px solid black;
-    /* 검은색 테두리 */
-    padding: 8px;
+    border: 1.3px solid #ddd;
+    padding: 10px !important;
     text-align: left;
 }
 
-th {
-    background-color: #f4f4f4;
-    /* 헤더 배경색 */
-    font-weight: bold;
+.ProseMirror pre code {
+    background-color: #2d2d2d;
+    display: block;
+    font-family: "Fira Code", monospace;
+    white-space: pre;
+    color: #f8f8f2;
+    padding: 32px;
 }

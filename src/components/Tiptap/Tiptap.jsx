@@ -18,6 +18,7 @@ import {
 import "highlight.js/styles/github-dark.css";
 
 import "./Tiptap.css";
+import DropdownCard from "./DropdownCard";
 
 // lowlight 설정
 const lowlight = createLowlight(all);
@@ -30,15 +31,15 @@ const Tiptap = () => {
   const [markdown, setMarkdown] = useState("");
 
   const commands = [
-    { label: "표", action: (editor) => editor.chain().focus().insertTable({ rows: 2, cols: 2 }).run() },
-    { label: "이미지", action: (editor) => {
+    { label: "table", action: (editor) => editor.chain().focus().insertTable({ rows: 2, cols: 2 }).run() },
+    { label: "image", action: (editor) => {
         const imageUrl = prompt("이미지 URL을 입력하세요:");
         if (imageUrl) {
           editor.chain().focus().setImage({ src: imageUrl }).run();
         }
       }
     },
-    { label: "코드 블록", action: (editor) => editor.chain().focus().toggleCodeBlock().run() },
+    { label: "code block", action: (editor) => editor.chain().focus().toggleCodeBlock().run() },
   ];
 
   const extendedMarkdownSerializerNodes = {
@@ -83,10 +84,25 @@ const Tiptap = () => {
     tableHeader(state, node) {
       state.write(`**${node.textContent.trim()}**`);
     },
+    hardBreak(state, node) {
+      state.write("  \n");
+    }
   };
 
   const extendedMarkdownSerializerMarks = {
   ...defaultMarkdownSerializer.marks,
+  bold: {
+    open: "**",
+    close: "**",
+    mixable: true,
+    expelEnclosingWhitespace: true,
+  },
+  Italic: {
+    open: "*",
+    close: "*",
+    mixable: true,
+    expelEnclosingWhitespace: true,
+  },
   };
 
   const editor = useEditor({
@@ -100,8 +116,10 @@ const Tiptap = () => {
       CodeBlockLowlight.configure({
         lowlight, // lowlight 문법 강조 사용
       }),
-            Table.configure({
+      Table.configure({
         resizable: true,
+        cellMinWidth: 50,
+        cellMinHeight: 20,
       }),
       TableRow,
       TableCell,
@@ -130,18 +148,16 @@ const Tiptap = () => {
 
     editorProps: {
       handleKeyDown(view, event) {
-        // 드롭다운 상태 관련 변수
-        const { state } = view;
-        const { from } = state.selection;
+        const { state, dispatch } = view;
+        const { from, to } = state.selection;
 
         // 슬래시 입력 시 명령어 목록 표시
         if (event.key === "/") {
-          console.log("슬래시 입력됨!");
           const startCoords = view.coordsAtPos(from);
           setDropdownPosition({ x: startCoords.left, y: startCoords.bottom });
           setCommandList(commands);
           setDropdownVisible(true);
-          return true; // ProseMirror 기본 동작 중단
+          return true;
         }
 
         // Enter 키로 첫 번째 명령 실행
@@ -154,7 +170,42 @@ const Tiptap = () => {
           return true;
         }
 
-        // Escape 키로 드롭다운 닫기
+        if (event.key === "Tab") {
+          event.preventDefault();
+          const transaction = state.tr.insertText("    ", from, to);
+          dispatch(transaction);
+          return true;
+        }
+
+        if (event.key === "Backspace") {
+          const { $from } = state.selection;
+          const nodeBefore = $from.nodeBefore;
+          const nodeAfter = $from.nodeAfter;
+
+          if (nodeBefore && (nodeBefore.type.name === "table" || nodeBefore.type.name === "codeBlock")) {
+            event.preventDefault();
+            const tr = state.tr.delete($from.before(), $from.after());
+            dispatch(tr);
+            return true;
+          }
+
+          if (nodeAfter && (nodeAfter.type.name === "table" || nodeAfter.type.name === "codeBlock")) {
+            event.preventDefault();
+            const tr = state.tr.delete($from.before(), $from.after());
+            dispatch(tr);
+            return true;
+          }
+
+          const node = $from.node($from.depth);
+          if (node.type.name === "tableCell" || node.type.name === "tableHeader") {
+            event.preventDefault();
+            const tr = state.tr.delete($from.before($from.depth - 1), $from.after($from.depth - 1));
+            dispatch(tr);
+            return true;
+          }
+
+        }
+
         if (event.key === "Escape") {
           setDropdownVisible(false);
           return true;
@@ -178,25 +229,21 @@ const Tiptap = () => {
 
   return (
     <div className="container">
-      <h3 className="heading">Markdown Editor</h3>
-      <div className="editor-container no-tailwind">
-        <EditorContent editor={editor} />
+      <div
+        className="editor-container border border-gray-300 rounded-md bg-white overflow-hidden no-tailwind"
+        style={{
+          minHeight: "750px",
+          width: "1200px",
+          padding: "16px",
+        }}
+      >
+        <EditorContent editor={editor} style={{ width: "100%", height: "100%", outline: "none" }} />
         {dropdownVisible && (
-          <ul
-            className="dropdown"
-            ref={dropdownRef}
-            style={{ left: dropdownPosition.x, top: dropdownPosition.y }}
-          >
-            {commandList.map((command, index) => (
-              <li
-                key={index}
-                className="dropdown-item"
-                onClick={() => handleCommandClick(command)}
-              >
-                {command.label}
-              </li>
-            ))}
-          </ul>
+          <DropdownCard
+            commands={commandList}
+            position={dropdownPosition}
+            onCommandClick={handleCommandClick}
+          />
         )}
       </div>
     </div>

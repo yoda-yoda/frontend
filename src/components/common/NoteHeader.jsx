@@ -1,22 +1,28 @@
 import React from "react";
-import { AiOutlineArrowLeft, AiOutlineShareAlt, AiOutlineMessage } from "react-icons/ai";
+import { AiOutlineArrowLeft, AiOutlineShareAlt, AiOutlineMessage, AiOutlineMenu } from "react-icons/ai";
 
-const NoteHeader = ({ participants, onBack, onShare, onChat }) => {
+const NoteHeader = ({ participants, onBack, onShare, onChat, onMenu }) => {
   return (
     <div className="flex items-center justify-between px-4 py-2 bg-white border-b border-gray-300">
       {/* 뒤로가기 버튼과 이미지 그룹 */}
       <div className="flex items-center gap-2">
-        <img
-          src="./accord-removebg.png"
-          alt="Logo"
-          className="h-10 object-contain"
-        />
+        <button
+          className="flex items-center justify-center w-8 h-8 rounded-md border border-gray-300 bg-gray-100 text-gray-600 hover:text-gray-900 hover:bg-gray-200"
+          onClick={onMenu}
+        >
+          <AiOutlineMenu size={18} />
+        </button>
         <button
           className="flex items-center justify-center w-8 h-8 rounded-md border border-gray-300 bg-gray-100 text-gray-600 hover:text-gray-900 hover:bg-gray-200"
           onClick={onBack}
         >
           <AiOutlineArrowLeft size={18} />
         </button>
+        <img
+          src="./accord-removebg.png"
+          alt="Logo"
+          className="h-10 object-contain"
+        />
       </div>
 
       {/* 우측 프로필 및 버튼 그룹 */}
@@ -46,7 +52,7 @@ const NoteHeader = ({ participants, onBack, onShare, onChat }) => {
 
         {/* Share 버튼 */}
         <button
-          className="flex items-center gap-1 px-2 py-1 rounded-md border border-gray-300 bg-gray-100 text-gray-600 hover:text-gray-900 hover:bg-gray-200"
+          className="flex items-center gap-1 h-8 px-2 py-1 rounded-md border border-gray-300 bg-gray-100 text-gray-600 hover:text-gray-900 hover:bg-gray-200"
           onClick={onShare}
         >
           <span className="text-sm">Share</span>

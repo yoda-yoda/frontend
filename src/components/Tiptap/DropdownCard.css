@@ -1,0 +1,36 @@
+.dropdown {
+    position: absolute;
+    background-color: white;
+    border: 1px solid #ddd;
+    padding: 8px;
+    border-radius: 5px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    z-index: 1000;
+    list-style: none;
+    /* 리스트 스타일 제거 */
+    margin: 0;
+    padding: 0;
+}
+
+.dropdown-item {
+    display: flex;
+    align-items: center;
+    padding: 8px;
+    cursor: pointer;
+    border-bottom: 1px solid #eee;
+    /* 구분선 추가 */
+}
+
+.dropdown-item:last-child {
+    border-bottom: none;
+    /* 마지막 아이템 구분선 제거 */
+}
+
+.dropdown-item:hover {
+    background-color: #f0f0f0;
+}
+
+.dropdown-text {
+    margin-left: 8px;
+    color: #666;
+}

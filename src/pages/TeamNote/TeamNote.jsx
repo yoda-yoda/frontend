@@ -28,16 +28,14 @@ const TeamNote = () => {
         participants={participants} 
         onBack={handleBack}
         onShare={handleShare} 
-        onChat={handleChat} />
-      <header>
-        <h1>TeamNote</h1>
-      </header>
+        onChat={handleChat}
+        onMenu={() => console.log("Menu button clicked!")}
+      />
+
       <main>
         <Tiptap />
       </main>
-      <footer>
-        <p>TeamNote - Collaborative Markdown Editor</p>
-      </footer>
+
     </div>
   );
 };
