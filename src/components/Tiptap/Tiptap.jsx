@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, forwardRef, useRef, useEffect, useImperativeHandle } from "react";
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import CodeBlockLowlight from "@tiptap/extension-code-block-lowlight";
@@ -17,6 +17,7 @@ import {
 } from "prosemirror-markdown";
 import "highlight.js/styles/github-dark.css";
 import { DragHandle } from "@tiptap-pro/extension-drag-handle";
+import { getNote } from "../../service/NoteService";
 
 import "./Tiptap.css";
 import DropdownCard from "./DropdownCard";
@@ -24,7 +25,7 @@ import DropdownCard from "./DropdownCard";
 // lowlight 설정
 const lowlight = createLowlight(all);
 
-const Tiptap = () => {
+const Tiptap = forwardRef(({ onSave }, ref, team_id) => {
   const [dropdownVisible, setDropdownVisible] = useState(false);
   const [commandList, setCommandList] = useState([]);
   const [dropdownPosition, setDropdownPosition] = useState({ x: 0, y: 0 });
@@ -131,13 +132,7 @@ const Tiptap = () => {
       OrderedList,
       ListItem,
     ],
-    content: `
-      <h1>Markdown Example</h1>
-      <p>This is a **bold** text</p>
-      <pre><code class="language-javascript">
-        console.log('Hello, Markdown!');
-      </code></pre>
-    `,
+    content: ``,
     onUpdate: ({ editor }) => {
       // Markdown 직렬화
       const serializer = new MarkdownSerializer(
@@ -237,6 +232,33 @@ const Tiptap = () => {
     }
   };
 
+    useEffect(() => {
+    const fetchNote = async () => {
+      try {
+        const note = await getNote("1");
+        if (note && note.note) {
+          const parsedContent = JSON.parse(note.note);
+          editor.commands.setContent(parsedContent);
+        }
+      } catch (error) {
+        console.error("Error fetching note:", error);
+      }
+    };
+
+    fetchNote();
+  }, [team_id, editor]);
+
+  useImperativeHandle(ref, () => ({
+    handleSave: () => {
+      if (editor) {
+        const jsonContent = editor.getJSON();
+        console.log(jsonContent);
+        onSave(jsonContent);
+      }
+    }
+  }));
+
+
   return (
     <div className="container">
       <div
@@ -268,6 +290,6 @@ const Tiptap = () => {
       </div>
     </div>
   );
-};
+});
 
 export default Tiptap;

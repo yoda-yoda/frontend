@@ -1,7 +1,7 @@
 import React from "react";
-import { AiOutlineArrowLeft, AiOutlineShareAlt, AiOutlineMessage, AiOutlineMenu } from "react-icons/ai";
+import { AiOutlineArrowLeft, AiOutlineShareAlt, AiOutlineMessage, AiOutlineMenu, AiOutlineSave } from "react-icons/ai";
 
-const NoteHeader = ({ participants, onBack, onShare, onChat, onMenu }) => {
+const NoteHeader = ({ participants, onBack, onShare, onChat, onMenu, onSave }) => {
   return (
     <div className="flex items-center justify-between px-4 py-2 bg-white border-b border-gray-300">
       {/* 뒤로가기 버튼과 이미지 그룹 */}
@@ -57,6 +57,14 @@ const NoteHeader = ({ participants, onBack, onShare, onChat, onMenu }) => {
         >
           <span className="text-sm">Share</span>
           <AiOutlineShareAlt size={16} />
+        </button>
+
+      <button
+          className="flex items-center gap-1 h-8 px-2 py-1 rounded-md border border-gray-300 bg-gray-100 text-gray-600 hover:text-gray-900 hover:bg-gray-200"
+          onClick={onSave}
+        >
+          <span className="text-sm">Save</span>
+          <AiOutlineSave size={16} />
         </button>
       </div>
     </div>
