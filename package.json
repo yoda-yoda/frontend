@@ -3,6 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
+    "@tiptap-pro/extension-drag-handle-react": "^2.17.2",
+    "@tiptap-pro/extension-node-range": "^2.17.2",
+    "@tiptap-pro/extension-unique-id": "^2.17.2",
     "@tiptap/core": "^2.11.2",
     "@tiptap/extension-blockquote": "^2.11.2",
     "@tiptap/extension-bold": "^2.11.2",
@@ -10,6 +13,7 @@
     "@tiptap/extension-code": "^2.11.2",
     "@tiptap/extension-code-block": "^2.11.2",
     "@tiptap/extension-code-block-lowlight": "^2.11.2",
+    "@tiptap/extension-collaboration": "^2.11.2",
     "@tiptap/extension-hard-break": "^2.11.2",
     "@tiptap/extension-horizontal-rule": "^2.11.2",
     "@tiptap/extension-image": "^2.11.2",
@@ -38,7 +42,10 @@
     "react-dom": "^19.0.0",
     "react-icons": "^5.4.0",
     "react-router-dom": "^7.1.1",
-    "react-scripts": "5.0.1"
+    "react-scripts": "5.0.1",
+    "y-prosemirror": "^1.2.15",
+    "y-protocols": "^1.0.6",
+    "yjs": "^13.6.22"
   },
   "scripts": {
     "start": "react-scripts start",

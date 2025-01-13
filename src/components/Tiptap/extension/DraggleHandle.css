@@ -1,0 +1,5 @@
+.draggable-handle {
+    cursor: grab;
+    display: inline-block;
+    margin-right: 8px;
+}

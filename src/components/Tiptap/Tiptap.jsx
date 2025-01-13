@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import CodeBlockLowlight from "@tiptap/extension-code-block-lowlight";
@@ -16,6 +16,7 @@ import {
   defaultMarkdownSerializer,
 } from "prosemirror-markdown";
 import "highlight.js/styles/github-dark.css";
+import { DragHandle } from "@tiptap-pro/extension-drag-handle";
 
 import "./Tiptap.css";
 import DropdownCard from "./DropdownCard";
@@ -27,8 +28,8 @@ const Tiptap = () => {
   const [dropdownVisible, setDropdownVisible] = useState(false);
   const [commandList, setCommandList] = useState([]);
   const [dropdownPosition, setDropdownPosition] = useState({ x: 0, y: 0 });
-  const dropdownRef = useRef(null);
   const [markdown, setMarkdown] = useState("");
+  const [selectedNode, setSelectedNode] = useState(null);
 
   const commands = [
     { label: "table", action: (editor) => editor.chain().focus().insertTable({ rows: 2, cols: 2 }).run() },
@@ -87,6 +88,7 @@ const Tiptap = () => {
     hardBreak(state, node) {
       state.write("  \n");
     }
+    
   };
 
   const extendedMarkdownSerializerMarks = {
@@ -143,7 +145,6 @@ const Tiptap = () => {
         extendedMarkdownSerializerMarks
       );
       const markdownContent = serializer.serialize(editor.state.doc);
-      setMarkdown(markdownContent);
     },
 
     editorProps: {
@@ -171,6 +172,15 @@ const Tiptap = () => {
         }
 
         if (event.key === "Tab") {
+          const { $from } = state.selection;
+          const node = $from.node($from.depth);
+
+          if (node.type.name === "listItem") {
+            event.preventDefault();
+            editor.chain().focus().sinkListItem("listItem").run();
+            return true;
+          }
+
           event.preventDefault();
           const transaction = state.tr.insertText("    ", from, to);
           dispatch(transaction);
@@ -196,6 +206,7 @@ const Tiptap = () => {
             return true;
           }
 
+          // 테이블 셀 내부에서 백스페이스 키 입력 처리
           const node = $from.node($from.depth);
           if (node.type.name === "tableCell" || node.type.name === "tableHeader") {
             event.preventDefault();
@@ -203,7 +214,6 @@ const Tiptap = () => {
             dispatch(tr);
             return true;
           }
-
         }
 
         if (event.key === "Escape") {
@@ -237,6 +247,16 @@ const Tiptap = () => {
           padding: "16px",
         }}
       >
+        {selectedNode && (
+          <DragHandle editor={editor}
+            node={selectedNode}
+
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 9h16.5m-16.5 6.75h16.5" />
+            </svg>
+          </DragHandle>
+        )}
         <EditorContent editor={editor} style={{ width: "100%", height: "100%", outline: "none" }} />
         {dropdownVisible && (
           <DropdownCard
