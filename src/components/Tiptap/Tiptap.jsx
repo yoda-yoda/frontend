@@ -232,13 +232,13 @@ const Tiptap = forwardRef(({ onSave }, ref, team_id) => {
     }
   };
 
-    useEffect(() => {
+  useEffect(() => {
     const fetchNote = async () => {
       try {
         const note = await getNote("1");
         if (note && note.note) {
-          const parsedContent = JSON.parse(note.note);
-          editor.commands.setContent(parsedContent);
+          const parsedNote = JSON.parse(note.note);
+          editor.commands.setContent(parsedNote);
         }
       } catch (error) {
         console.error("Error fetching note:", error);

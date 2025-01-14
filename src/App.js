@@ -6,8 +6,7 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* 기본 경로로 TeamNote 컴포넌트를 렌더링 */}
-        <Route path="/" element={<TeamNote />} />
+        <Route path="/note/:team_id" element={<TeamNote />} />
       </Routes>
     </BrowserRouter>
   );
