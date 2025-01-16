@@ -1,0 +1,51 @@
+.header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 20px;
+    background-color: #f5f5f5;
+    border-bottom: 1px solid #ddd;
+}
+
+.back-button,
+.share-button {
+    border: none;
+    background: none;
+    font-size: 16px;
+    cursor: pointer;
+}
+
+.participants {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.participant-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 1px solid #ddd;
+}
+
+.header {
+    position: relative;
+    z-index: 1100;
+    /* 헤더의 z-index를 사이드바보다 높게 설정 */
+}
+
+.main-container {
+    transition: margin-left 0.3s ease;
+}
+
+.main-container.sidebar-open {
+    margin-left: 250px;
+    /* 사이드바 너비만큼 오른쪽으로 밀림 */
+}
+
+.header {
+    position: relative;
+    z-index: 1100;
+    /* 헤더의 z-index를 사이드바보다 높게 설정 */
+}

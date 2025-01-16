@@ -1,0 +1,20 @@
+.team-note {
+    transition: margin-left 0.3s ease;
+}
+
+.team-note.sidebar-open {
+    margin-left: 250px;
+    /* 사이드바 너비만큼 오른쪽으로 밀림 */
+}
+
+.note-header {
+    position: relative;
+    z-index: 1100;
+    /* 헤더의 z-index를 사이드바보다 높게 설정 */
+}
+
+main {
+    position: relative;
+    z-index: 1000;
+    /* 메인의 z-index를 사이드바보다 높게 설정 */
+}

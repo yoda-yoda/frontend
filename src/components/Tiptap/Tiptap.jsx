@@ -191,21 +191,21 @@ const Tiptap = forwardRef(( props, ref ) => {
           return true;
         }
 
-        if (event.key === "Tab") {
-          const { $from } = state.selection;
-          const node = $from.node($from.depth);
+        // if (event.key === "Tab") {
+        //   const { $from } = state.selection;
+        //   const node = $from.nodeBefore;
 
-          if (node.type.name === "listItem") {
-            event.preventDefault();
-            editor.chain().focus().sinkListItem("listItem").run();
-            return true;
-          }
+        //   if (node.type.name === "listItem") {
+        //     event.preventDefault();
+        //     editor.chain().focus().sinkListItem("listItem").run();
+        //     return true;
+        //   }
 
-          event.preventDefault();
-          const transaction = state.tr.insertText("    ", from, to);
-          dispatch(transaction);
-          return true;
-        }
+        //   event.preventDefault();
+        //   const transaction = state.tr.insertText("    ", from, to);
+        //   dispatch(transaction);
+        //   return true;
+        // }
 
         if (event.key === "Backspace") {
           const { $from } = state.selection;
@@ -315,8 +315,7 @@ const Tiptap = forwardRef(( props, ref ) => {
         className="editor-container border border-gray-300 rounded-md bg-white overflow-hidden no-tailwind"
         style={{
           minHeight: "750px",
-          width: "1200px",
-          padding: "16px",
+          padding: "20px",
         }}
       >
         {selectedNode && (

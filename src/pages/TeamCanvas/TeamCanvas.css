@@ -1,5 +1,6 @@
 .TeamCanvas {
     position: relative;
+    transition: margin-left 0.3s ease;
 }
 .CanvasToolbar {
     position: absolute;
@@ -14,8 +15,21 @@
     border: 1px solid #ccc;
     border-radius: 8px;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    z-index: 10;
+    z-index: 1100;
 }
 .CanvasToolbar button {
+    position: relative;
     pointer-events: auto;
+    z-index: 1100;
+}
+
+.TeamCanvas.sidebar-open {
+    margin-left: 250px;
+    /* 사이드바 너비만큼 오른쪽으로 밀림 */
+}
+
+.NoteHeader {
+    position: relative;
+    z-index: 1100;
+    /* 헤더의 z-index를 사이드바보다 높게 설정 */
 }

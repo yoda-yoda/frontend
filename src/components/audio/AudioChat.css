@@ -1,0 +1,116 @@
+.audio-chat {
+    margin-top: 20px;
+    color: black;
+    border: 1.5px solid #f3f4f6;
+    border-radius: 10px;
+    padding: 10px;
+    /* 글씨 색상을 검은색으로 설정 */
+}
+
+.audio-chat .icon {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 20px;
+}
+
+.audio-chat .participants {
+    margin-top: 20px;
+}
+
+.audio-chat .participants ul {
+    list-style-type: none;
+    padding: 0;
+}
+
+.audio-chat .participants .participant {
+    display: flex;
+    align-items: center;
+    padding: 5px 0;
+    width: 100%;
+    /* participant의 너비를 100%로 설정 */
+}
+
+.audio-chat .participants .participant .participant-container {
+    display: flex;
+    align-items: center;
+    padding: 10px;
+    border-radius: 10px;
+    /* 동그랗게 처리 */
+    background-color: #f0f0f0;
+    width: 100%;
+    /* participant-container의 너비를 100%로 설정 */
+}
+
+.audio-chat .participants .participant .profile-pic {
+    width: 30px;
+    /* 이미지 크기를 작게 설정 */
+    height: 30px;
+    /* 이미지 크기를 작게 설정 */
+    border-radius: 50%;
+    /* 이미지를 동그랗게 설정 */
+    margin-right: 10px;
+}
+
+.audio-chat .participants .participant .name {
+    flex-grow: 1;
+}
+
+.audio-chat .participants .participant .volume-slider {
+    width: 80px;
+    /* 슬라이더의 너비를 더 작게 설정 */
+    margin-left: 10px;
+    -webkit-appearance: none;
+    appearance: none;
+    height: 5px;
+    background: #484e5e;
+    /* 슬라이더 색상 설정 */
+    outline: none;
+    opacity: 0.7;
+    transition: opacity 0.2s;
+}
+
+.audio-chat .participants .participant .volume-slider:hover {
+    opacity: 1;
+}
+
+.audio-chat .participants .participant .volume-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 15px;
+    height: 15px;
+    border-radius: 50%;
+    background: #272a33;
+    /* 슬라이더 버튼 색상 설정 */
+    cursor: pointer;
+}
+
+.audio-chat .participants .participant .volume-slider::-moz-range-thumb {
+    width: 15px;
+    height: 15px;
+    border-radius: 50%;
+    background: #272a33;
+    /* 슬라이더 버튼 색상 설정 */
+    cursor: pointer;
+}
+
+.audio-chat .controls {
+    display: flex;
+    justify-content: center;
+    margin-top: 20px;
+}
+
+.audio-chat .btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px 20px;
+    background-color: #484e5e;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.audio-chat .btn:hover {
+    background-color: #272a33;
+}

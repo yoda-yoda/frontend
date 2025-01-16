@@ -1,0 +1,50 @@
+.sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 250px;
+    background-color: white;
+    box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease;
+    z-index: 1000;
+    /* 사이드바의 z-index 설정 */
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 10px;
+}
+
+.sidebar.closed {
+    transform: translateX(-100%);
+}
+
+.sidebar.open {
+    transform: translateX(0);
+}
+
+.sidebar-header {
+    display: flex;
+    align-items: center;
+    justify-content: start;
+}
+
+.sidebar button {
+    display: flex;
+    align-items: center;
+    justify-content: start;
+    width: 100%;
+    background: none;
+    border: none;
+    cursor: pointer;
+}
+
+.sidebar-content {
+    flex-grow: 1;
+    color: black;
+    /* 글씨 색상을 검은색으로 설정 */
+}
+
+.sidebar-footer {
+    margin-top: auto;
+}
