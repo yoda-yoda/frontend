@@ -1,9 +1,10 @@
-import React, { useRef, useEffect, useState } from 'react';
+import React, { useRef, useEffect, useState, forwardRef, useImperativeHandle } from 'react';
 import { useRecoilState, useRecoilValue } from 'recoil';
 import { Stage, Layer, Line, Rect, Circle, Text, Image, Transformer } from 'react-konva';
 import { toolState, colorState } from '../../recoil/canvasToolAtoms';
+import { createCanvas, getCanvasByTeamID } from '../../service/CanvasService';
 
-const CanvasArea = () => {
+const CanvasArea = forwardRef(({ teamId }, ref) => {
   const [tool, setTool] = useRecoilState(toolState);
   const color = useRecoilValue(colorState);
   const stageRef = useRef(null);
@@ -16,6 +17,36 @@ const CanvasArea = () => {
   const [textEditPosition, setTextEditPosition] = useState({ x: 0, y: 0 });
   const [textEditIndex, setTextEditIndex] = useState(null);
   const transformerRef = useRef(null);
+
+  useImperativeHandle(ref, () => ({
+    saveCanvas: async () => {
+      const canvasData = { team_id: teamId, canvas: JSON.stringify(shapes) };
+      try {
+        await createCanvas(canvasData);
+        console.log('Canvas saved successfully');
+      } catch (error) {
+        console.error('Error saving canvas:', error);
+      }
+    }
+  }));
+
+  useEffect(() => {
+    const fetchCanvas = async () => {
+      if (!teamId) {
+        console.error('teamId is undefined');
+        return;
+      }
+      try {
+        const canvasData = await getCanvasByTeamID(teamId);
+        setShapes(JSON.parse(canvasData.canvas || '[]'));
+      } catch (error) {
+        console.error('Error fetching canvas data:', error);
+      }
+    };
+
+    fetchCanvas();
+  }, [teamId]);
+
 
   const getCursorStyle = () => {
     switch (tool) {
@@ -145,6 +176,16 @@ const CanvasArea = () => {
       return shape;
     });
     setShapes(updatedShapes);
+  };
+
+  const saveCanvasAsJSON = async () => {
+    const canvasData = { teamId, shapes };
+    try {
+      await createCanvas(canvasData);
+      console.log('Canvas saved successfully');
+    } catch (error) {
+      console.error('Error saving canvas:', error);
+    }
   };
 
   return (
@@ -279,6 +320,6 @@ const CanvasArea = () => {
       )}
     </>
   );
-};
+});
 
 export default CanvasArea;

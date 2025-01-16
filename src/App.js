@@ -8,7 +8,7 @@ function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/note/:team_id" element={<TeamNote />} />
-        <Route path="/canvas/:team_id" element={<TeamCanvas />} />
+        <Route path="/canvas/:teamId" element={<TeamCanvas />} />
       </Routes>
     </BrowserRouter>
   );
