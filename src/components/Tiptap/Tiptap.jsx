@@ -10,6 +10,8 @@ import Image from "@tiptap/extension-image";
 import BulletList from "@tiptap/extension-bullet-list";
 import OrderedList from "@tiptap/extension-ordered-list";
 import ListItem from "@tiptap/extension-list-item";
+import Collaboration from "@tiptap/extension-collaboration";
+import CollaborationCursor from "@tiptap/extension-collaboration-cursor";
 import { all, createLowlight } from "lowlight";
 import {
   MarkdownSerializer,
@@ -19,18 +21,25 @@ import "highlight.js/styles/github-dark.css";
 import { DragHandle } from "@tiptap-pro/extension-drag-handle";
 import { getNote } from "../../service/NoteService";
 
+import * as Y from "yjs";
+import { WebrtcProvider } from "y-webrtc";
+import webRTCService from "../../service/WebRTCService";
+
 import "./Tiptap.css";
 import DropdownCard from "./DropdownCard";
 
 // lowlight 설정
 const lowlight = createLowlight(all);
 
-const Tiptap = forwardRef(({ onSave }, ref, team_id) => {
+const Tiptap = forwardRef(( props, ref ) => {
   const [dropdownVisible, setDropdownVisible] = useState(false);
   const [commandList, setCommandList] = useState([]);
   const [dropdownPosition, setDropdownPosition] = useState({ x: 0, y: 0 });
   const [markdown, setMarkdown] = useState("");
   const [selectedNode, setSelectedNode] = useState(null);
+  const [doc, setDoc] = useState(null);
+  const [provider, setProvider] = useState(null);
+  const { onSave, team_id, participants, ...rest } = props;
 
   const commands = [
     { label: "table", action: (editor) => editor.chain().focus().insertTable({ rows: 2, cols: 2 }).run() },
@@ -116,6 +125,18 @@ const Tiptap = forwardRef(({ onSave }, ref, team_id) => {
         bulletList: false, // 기본 순서 있는 목록 비활성화
         listItem: false, // 기본 리스트 아이템 비활성화
       }),
+      doc &&
+        Collaboration.configure({
+          document: doc,
+        }),
+      provider &&
+        CollaborationCursor.configure({
+          provider,
+          user: {
+            name: "Anonymous",
+            color: "#f783ac",
+          },
+        }),
       CodeBlockLowlight.configure({
         lowlight, // lowlight 문법 강조 사용
       }),
@@ -140,6 +161,10 @@ const Tiptap = forwardRef(({ onSave }, ref, team_id) => {
         extendedMarkdownSerializerMarks
       );
       const markdownContent = serializer.serialize(editor.state.doc);
+      setMarkdown(markdownContent);
+
+      const jsonContent = editor.getJSON();
+      webRTCService.sendMessage("note", JSON.stringify(jsonContent));
     },
 
     editorProps: {
@@ -231,6 +256,31 @@ const Tiptap = forwardRef(({ onSave }, ref, team_id) => {
       editor.chain().focus().toggleCodeBlock().run();
     }
   };
+
+  useEffect(() => {
+    const newDoc = new Y.Doc();
+    const newProvider = new WebrtcProvider("note/1", newDoc, {
+      signaling: ["ws://127.0.0.1:4000/webrtc/1"], 
+      iceServers: [
+        // {
+        //   urls: "stun:stun.l.google.com:19302",
+        // },
+        {
+          urls: "turn:127.0.0.1:3478", 
+          username: "user",
+          credential: "pass",
+        },
+      ],
+    });
+    const yXmlFragment = newDoc.getXmlFragment("prosemirror");
+
+    setDoc(newDoc);
+    setProvider(newProvider);
+
+    return () => {
+      newProvider.destroy();
+    };
+  }, []);
 
   useEffect(() => {
     const fetchNote = async () => {

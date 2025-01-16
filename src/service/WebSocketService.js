@@ -2,7 +2,8 @@ class WebSocketService {
   constructor(url) {
     this.url = url;
     this.socket = null;
-    this.messageHandlers = [];
+    this.isConnected = false;
+    this.messageQueue = [];
   }
 
   connect() {
@@ -11,6 +12,11 @@ class WebSocketService {
 
       this.socket.onopen = () => {
         console.log('WebSocket connected');
+        this.isConnected = true;
+
+        // 대기 중인 메시지 전송
+        this.messageQueue.forEach((msg) => this.socket.send(msg));
+        this.messageQueue = [];
       };
 
       this.socket.onmessage = (event) => {
@@ -22,6 +28,7 @@ class WebSocketService {
 
       this.socket.onclose = () => {
         console.log('WebSocket disconnected');
+        this.isConnected = false;
       };
 
       this.socket.onerror = (error) => {
@@ -35,6 +42,7 @@ class WebSocketService {
       this.socket.send(JSON.stringify(message));
     } else {
       console.error('WebSocket is not connected.');
+      this.messageQueue.push(msgString); 
     }
   }
 

@@ -19,7 +19,7 @@ const NoteHeader = ({ participants, onBack, onShare, onChat, onMenu, onSave }) =
           <AiOutlineArrowLeft size={18} />
         </button>
         <img
-          src="./accord-removebg.png"
+          src="fe/public/accord-removebg.png"
           alt="Logo"
           className="h-10 object-contain"
         />

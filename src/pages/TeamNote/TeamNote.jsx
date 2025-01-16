@@ -9,79 +9,59 @@ import webRTCService from "../../service/WebRTCService";
 const TeamNote = () => {
   const { team_id } = useParams();
   const participants = [
-    { name: "Alice", profilePicture: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSJRVyLbmUUrp61vQ7_fkz35ViGCYwX8iSAZw&s" },
-    { name: "Bob", profilePicture: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSJRVyLbmUUrp61vQ7_fkz35ViGCYwX8iSAZw&s" },
-    { name: "Charlie", profilePicture: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSJRVyLbmUUrp61vQ7_fkz35ViGCYwX8iSAZw&s" },
+    { name: "Alice", profilePicture: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSJRVyLbmUUrp61vQ7_fkz35ViGCYwX8iSAZw&s", color: "#918A70"},
+    { name: "Bob", profilePicture: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSJRVyLbmUUrp61vQ7_fkz35ViGCYwX8iSAZw&s", color: "#9AE6E8"},
+    { name: "Charlie", profilePicture: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSJRVyLbmUUrp61vQ7_fkz35ViGCYwX8iSAZw&s", color: "#C51790"},
   ];
   
   const tiptapRef = useRef(null);
 
-  useEffect(() => {
-    // WebSocket 연결
-    webSocketService.connect();
+useEffect(() => {
+  webSocketService.connect();
 
-    const handleWebSocketMessage = async (message) => {
-      console.log("Message from WebSocket:", message);
+  const handleWebSocketMessage = async (message) => {
+    console.log("WebSocket message:", message);
 
-      if (message.type === "answer") {
-        // 서버로부터 Answer 수신
-        try {
-          await webRTCService.setRemoteAnswer({
-            type: "answer",
-            sdp: message.sdp,
-          });
-        } catch (error) {
-          console.error("Error setting remote answer:", error);
-        }
-      } else if (message.type === "iceCandidate") {
-        // 서버로부터 ICE 후보 수신
-        try {
-          await webRTCService.addIceCandidate(message.candidate);
-        } catch (error) {
-          console.error("Error adding ICE candidate:", error);
-        }
-      }
-    };
+    if (message.type === "answer") {
+      await webRTCService.setRemoteAnswer({
+        type: "answer",
+        sdp: message.sdp,
+      });
+    } else if (message.type === "iceCandidate") {
+      await webRTCService.addIceCandidate(message.candidate);
+    }
+  };
 
-    webSocketService.addMessageHandler(handleWebSocketMessage);
+  webSocketService.addMessageHandler(handleWebSocketMessage);
 
-    const initiateWebRTC = async () => {
-      try {
-        // WebRTC PeerConnection 초기화
-        webRTCService.initConnection([
-          { urls: "stun:stun.l.google.com:19302" },
-          { urls: "turn:127.0.0.1:3478", username: "user", credential: "password" },
-        ]);
+  const initiateWebRTC = async () => {
+    webRTCService.initConnection([
+      // { urls: "stun:stun.l.google.com:19302" },
+      { urls: "turn:127.0.0.1:3478", username: "user", credential: "pass" },
+    ]);
 
-        // 데이터 채널 생성
-        webRTCService.createDataChannel("note", (data) => {
-          console.log("DataChannel message:", data);
-        });
+    webRTCService.createDataChannel("note/1", (data) => {
+      console.log("DataChannel message:", data);
+    });
 
-        // WebRTC Offer 생성 및 서버로 전송
-        const offer = await webRTCService.createOffer();
+    const offer = await webRTCService.createOffer();
+    if (!webRTCService.peerConnection.localDescription) {
+      await webRTCService.peerConnection.setLocalDescription(offer);
+    }
+    webSocketService.sendMessage({
+      type: "offer",
+      sdp: offer.sdp,
+    });
+  };
 
-        // Offer가 이미 설정된 경우를 방지
-        if (!webRTCService.peerConnection.localDescription) {
-          await webRTCService.peerConnection.setLocalDescription(offer);
-        }
+  initiateWebRTC();
 
-        webSocketService.sendMessage({
-          type: "offer",
-          sdp: offer.sdp,
-        });
-      } catch (error) {
-        console.error("Error during WebRTC initiation:", error);
-      }
-    };
+  return () => {
+    webSocketService.removeMessageHandler(handleWebSocketMessage);
+    webSocketService.disconnect();
+  };
+}, [team_id]);
 
-    initiateWebRTC();
-
-    return () => {
-      webSocketService.removeMessageHandler(handleWebSocketMessage);
-      webSocketService.disconnect();
-    };
-  }, [team_id]);
 
   const handleBack = () => {
     console.log("Back button clicked!");
@@ -122,7 +102,7 @@ const TeamNote = () => {
       />
 
       <main>
-        <Tiptap ref={tiptapRef} onSave={handleSave} team_id={"1"} />
+        <Tiptap ref={tiptapRef} onSave={handleSave} team_id={"1"} participants={participants} />
       </main>
 
     </div>

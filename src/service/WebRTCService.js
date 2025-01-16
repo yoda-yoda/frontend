@@ -12,12 +12,18 @@ class WebRTCService {
 
     this.peerConnection.onicecandidate = (event) => {
       if (event.candidate) {
-        console.log("New ICE candidate:", event.candidate);
+        console.log("New ICE candidate generated:", event.candidate);
         webSocketService.sendMessage({
           type: "iceCandidate",
           candidate: event.candidate,
         });
-      }
+
+        webSocketService.sendMessage({
+          type: "iceCandidate",
+          candidate: event.candidate,
+        });
+
+      } 
     };
   }
 
@@ -46,6 +52,7 @@ class WebRTCService {
   // Offer 생성 및 전송
   async createOffer() {
     const offer = await this.peerConnection.createOffer();
+    console.log("Generated Offer SDP:", offer.sdp);
     await this.peerConnection.setLocalDescription(offer);
     return offer;
   }
@@ -67,6 +74,9 @@ class WebRTCService {
       dataChannel.send(message);
     } else {
       console.error(`DataChannel '${channelName}' is not open.`);
+      console.log(`PeerConnection state: ${this.peerConnection.connectionState}`);
+      console.log(`DataChannel state: ${dataChannel ? dataChannel.readyState : "null"}`);
+      console.log(`message: ${message}`);
     }
   }
 }
