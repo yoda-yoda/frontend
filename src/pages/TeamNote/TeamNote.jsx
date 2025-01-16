@@ -1,15 +1,22 @@
 import React, { useRef, useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
+import { useRecoilState } from "recoil";
 import Tiptap from "../../components/tiptap/Tiptap";
 import NoteHeader from "../../components/common/NoteHeader";
 import Sidebar from "../../components/common/Sidebar";
 import { saveNote } from "../../service/NoteService";
-import webSocketService from "../../service/SignalService";
-import webRTCService from "../../service/WebRTCService";
+import webSocketService from "../../service/WebrtcSocketService";
+import noteWebRTCService from "../../service/NoteWebRTCService";
+import { yDocState, webRTCState } from "../../recoil/noteWebrtcAtoms";
+import { getNote } from "../../service/NoteService";
+import { WebrtcProvider } from "y-webrtc";
+import * as Y from "yjs";
 import "./TeamNote.css";
 
 const TeamNote = () => {
   const { team_id } = useParams();
+  const [yDoc, setYDoc] = useRecoilState(yDocState);
+  const [webRTC, setWebRTC] = useRecoilState(webRTCState);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const participants = [
     { name: "Alice", profilePicture: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSJRVyLbmUUrp61vQ7_fkz35ViGCYwX8iSAZw&s", color: "#918A70"},
@@ -30,30 +37,30 @@ const TeamNote = () => {
       console.log("WebSocket message:", message);
 
       if (message.type === "answer") {
-        await webRTCService.setRemoteAnswer({
+        await noteWebRTCService.setRemoteAnswer({
           type: "answer",
           sdp: message.sdp,
         });
       } else if (message.type === "iceCandidate") {
-        await webRTCService.addIceCandidate(message.candidate);
+        await noteWebRTCService.addIceCandidate(message.candidate);
       }
     };
 
     webSocketService.addMessageHandler(handleWebSocketMessage);
 
     const initiateWebRTC = async () => {
-      webRTCService.initConnection([
-        // { urls: "stun:stun.l.google.com:19302" },
+      noteWebRTCService.initConnection([
+        { urls: "stun:stun.l.google.com:19302" },
         { urls: "turn:127.0.0.1:3478", username: "user", credential: "pass" },
       ]);
 
-      webRTCService.createDataChannel("note/1", (data) => {
+      noteWebRTCService.createDataChannel("note/1", (data) => {
         console.log("DataChannel message:", data);
       });
 
-      const offer = await webRTCService.createOffer();
-      if (!webRTCService.peerConnection.localDescription) {
-        await webRTCService.peerConnection.setLocalDescription(offer);
+      const offer = await noteWebRTCService.createOffer();
+      if (!noteWebRTCService.peerConnection.localDescription) {
+        await noteWebRTCService.peerConnection.setLocalDescription(offer);
       }
       webSocketService.sendMessage({
         type: "offer",
@@ -68,6 +75,26 @@ const TeamNote = () => {
       webSocketService.disconnect();
     };
   }, [team_id]);
+
+
+  useEffect(() => {
+    const fetchNote = async () => {
+      try {
+        const note = await getNote("1");
+        if (note && note.note) {
+          const parsedNote = JSON.parse(note.note);
+
+          // Y.Doc의 XmlFragment 가져오기
+          setYDoc(parsedNote)
+        }
+      } catch (error) {
+        console.error("Error fetching note:", error);
+      }
+    };
+
+    if (yDoc) fetchNote();
+  }, [yDoc]);
+
 
 
   const handleBack = () => {
@@ -87,14 +114,13 @@ const TeamNote = () => {
       team_id: "1",
       note: JSON.stringify(content),
       created_at: new Date().toISOString(),
-    }
+    };
 
     try {
       const response = await saveNote(note);
     } catch (error) {
       console.error(error);
     }
-
   };
 
   return (
@@ -109,10 +135,9 @@ const TeamNote = () => {
       />
 
       <main>
-        <Tiptap ref={tiptapRef} onSave={handleSave} team_id={"1"} participants={participants} />
+        <Tiptap ref={tiptapRef} onSave={handleSave} team_id={"1"} participants={participants} yDoc={yDoc} />
       </main>
       <Sidebar isOpen={isSidebarOpen} onClose={handleMenuClick} />
-
     </div>
   );
 };

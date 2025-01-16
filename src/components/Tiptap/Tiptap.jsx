@@ -19,14 +19,10 @@ import {
 } from "prosemirror-markdown";
 import "highlight.js/styles/github-dark.css";
 import { DragHandle } from "@tiptap-pro/extension-drag-handle";
-import { getNote } from "../../service/NoteService";
-
-import * as Y from "yjs";
-import { WebrtcProvider } from "y-webrtc";
-import webRTCService from "../../service/WebRTCService";
 
 import "./Tiptap.css";
 import DropdownCard from "./DropdownCard";
+import noteWebRTCService from "../../service/NoteWebRTCService";
 
 // lowlight 설정
 const lowlight = createLowlight(all);
@@ -37,9 +33,8 @@ const Tiptap = forwardRef(( props, ref ) => {
   const [dropdownPosition, setDropdownPosition] = useState({ x: 0, y: 0 });
   const [markdown, setMarkdown] = useState("");
   const [selectedNode, setSelectedNode] = useState(null);
-  const [doc, setDoc] = useState(null);
   const [provider, setProvider] = useState(null);
-  const { onSave, team_id, participants, ...rest } = props;
+  const { onSave, team_id, participants, yDoc, ...rest } = props;
 
   const commands = [
     { label: "table", action: (editor) => editor.chain().focus().insertTable({ rows: 2, cols: 2 }).run() },
@@ -125,9 +120,9 @@ const Tiptap = forwardRef(( props, ref ) => {
         bulletList: false, // 기본 순서 있는 목록 비활성화
         listItem: false, // 기본 리스트 아이템 비활성화
       }),
-      doc &&
+      yDoc &&
         Collaboration.configure({
-          document: doc,
+          document: yDoc,
         }),
       provider &&
         CollaborationCursor.configure({
@@ -155,7 +150,6 @@ const Tiptap = forwardRef(( props, ref ) => {
     ],
     content: ``,
     onUpdate: ({ editor }) => {
-      // Markdown 직렬화
       const serializer = new MarkdownSerializer(
         extendedMarkdownSerializerNodes,
         extendedMarkdownSerializerMarks
@@ -164,7 +158,15 @@ const Tiptap = forwardRef(( props, ref ) => {
       setMarkdown(markdownContent);
 
       const jsonContent = editor.getJSON();
-      webRTCService.sendMessage("note", JSON.stringify(jsonContent));
+
+      // Y.js 문서 업데이트
+      if (yDoc) {
+        const yXmlFragment = yDoc.getXmlFragment("prosemirror");
+        yXmlFragment.applyUpdate(new Uint8Array(JSON.stringify(jsonContent)));
+      }
+
+      // WebRTC 전송
+      noteWebRTCService.sendData("note", JSON.stringify(jsonContent));
     },
 
     editorProps: {
@@ -256,47 +258,6 @@ const Tiptap = forwardRef(( props, ref ) => {
       editor.chain().focus().toggleCodeBlock().run();
     }
   };
-
-  useEffect(() => {
-    const newDoc = new Y.Doc();
-    const newProvider = new WebrtcProvider("note/1", newDoc, {
-      signaling: ["ws://127.0.0.1:4000/webrtc/1"], 
-      iceServers: [
-        // {
-        //   urls: "stun:stun.l.google.com:19302",
-        // },
-        {
-          urls: "turn:127.0.0.1:3478", 
-          username: "user",
-          credential: "pass",
-        },
-      ],
-    });
-    const yXmlFragment = newDoc.getXmlFragment("prosemirror");
-
-    setDoc(newDoc);
-    setProvider(newProvider);
-
-    return () => {
-      newProvider.destroy();
-    };
-  }, []);
-
-  useEffect(() => {
-    const fetchNote = async () => {
-      try {
-        const note = await getNote("1");
-        if (note && note.note) {
-          const parsedNote = JSON.parse(note.note);
-          editor.commands.setContent(parsedNote);
-        }
-      } catch (error) {
-        console.error("Error fetching note:", error);
-      }
-    };
-
-    fetchNote();
-  }, [team_id, editor]);
 
   useImperativeHandle(ref, () => ({
     handleSave: () => {
