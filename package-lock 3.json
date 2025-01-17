@@ -15082,9 +15082,9 @@
       }
     },
     "node_modules/react-router": {
-      "version": "7.1.2",
-      "resolved": "https://registry.npmjs.org/react-router/-/react-router-7.1.2.tgz",
-      "integrity": "sha512-KeallSO30KLpIe/ZZqfk6pCJ1c+5JhMxl3SCS3Zx1LgaGuQbgLDmjuNi6KZ5LnAV9sWjbmBWGRw8Um/Pw6BExg==",
+      "version": "7.1.1",
+      "resolved": "https://registry.npmjs.org/react-router/-/react-router-7.1.1.tgz",
+      "integrity": "sha512-39sXJkftkKWRZ2oJtHhCxmoCrBCULr/HAH4IT5DHlgu/Q0FCPV0S4Lx+abjDTx/74xoZzNYDYbOZWlJjruyuDQ==",
       "license": "MIT",
       "dependencies": {
         "@types/cookie": "^0.6.0",
@@ -15106,12 +15106,12 @@
       }
     },
     "node_modules/react-router-dom": {
-      "version": "7.1.2",
-      "resolved": "https://registry.npmjs.org/react-router-dom/-/react-router-dom-7.1.2.tgz",
-      "integrity": "sha512-kE7JdrDfeWO/2d6RPucLmqp2UL8Isv1VWtI5MQyYNA99KtncqxWDL6550+0rH4fboJKJbXRcyjRnIRT/gkxTcA==",
+      "version": "7.1.1",
+      "resolved": "https://registry.npmjs.org/react-router-dom/-/react-router-dom-7.1.1.tgz",
+      "integrity": "sha512-vSrQHWlJ5DCfyrhgo0k6zViOe9ToK8uT5XGSmnuC2R3/g261IdIMpZVqfjD6vWSXdnf5Czs4VA/V60oVR6/jnA==",
       "license": "MIT",
       "dependencies": {
-        "react-router": "7.1.2"
+        "react-router": "7.1.1"
       },
       "engines": {
         "node": ">=20.0.0"
@@ -17631,9 +17631,9 @@
       }
     },
     "node_modules/typescript": {
-      "version": "4.9.5",
-      "resolved": "https://registry.npmjs.org/typescript/-/typescript-4.9.5.tgz",
-      "integrity": "sha512-1FXk9E2Hm+QzZQ7z+McJiHL4NW1F2EzMu9Nq9i3zAaGqibafqYwCVU6WyWAuyQRRzOlxou8xZSyXLEN8oKj24g==",
+      "version": "5.7.3",
+      "resolved": "https://registry.npmjs.org/typescript/-/typescript-5.7.3.tgz",
+      "integrity": "sha512-84MVSjMEHP+FQRPy3pX9sTVV/INIex71s9TL2Gm5FG/WG1SqXeKyZ0k7/blY/4FdOzI12CBy1vGc4og/eus0fw==",
       "license": "Apache-2.0",
       "peer": true,
       "bin": {
@@ -17641,7 +17641,7 @@
         "tsserver": "bin/tsserver"
       },
       "engines": {
-        "node": ">=4.2.0"
+        "node": ">=14.17"
       }
     },
     "node_modules/uc.micro": {

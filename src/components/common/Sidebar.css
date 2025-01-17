@@ -48,3 +48,26 @@
 .sidebar-footer {
     margin-top: auto;
 }
+
+.team-name {
+    cursor: pointer;
+    font-weight: normal;
+    /* 폰트를 더 얇게 설정 */
+    margin-bottom: 10px;
+    /* 팀 이름 간의 간격을 넓힘 */
+}
+
+.team-dropdown {
+    padding-left: 20px;
+    margin-bottom: 10px;
+    /* 드롭다운 항목 간의 간격을 넓힘 */
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease-out;
+    /* 부드러운 드롭다운 애니메이션 */
+}
+
+.team-dropdown.open {
+    max-height: 100px;
+    /* 드롭다운이 열릴 때의 최대 높이 설정 */
+}

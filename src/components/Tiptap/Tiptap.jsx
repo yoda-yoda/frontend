@@ -1,4 +1,4 @@
-import React, { useState, forwardRef, useRef, useEffect, useImperativeHandle } from "react";
+import React, { useState, forwardRef, useRef, useEffect, useImperativeHandle, use } from "react";
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import CodeBlockLowlight from "@tiptap/extension-code-block-lowlight";
@@ -10,8 +10,6 @@ import Image from "@tiptap/extension-image";
 import BulletList from "@tiptap/extension-bullet-list";
 import OrderedList from "@tiptap/extension-ordered-list";
 import ListItem from "@tiptap/extension-list-item";
-import Collaboration from "@tiptap/extension-collaboration";
-import CollaborationCursor from "@tiptap/extension-collaboration-cursor";
 import { all, createLowlight } from "lowlight";
 import {
   MarkdownSerializer,
@@ -19,6 +17,10 @@ import {
 } from "prosemirror-markdown";
 import "highlight.js/styles/github-dark.css";
 import { DragHandle } from "@tiptap-pro/extension-drag-handle";
+
+import { EditorState } from '@tiptap/pm/state';
+import { Step } from '@tiptap/pm/transform';
+import { collab, receiveTransaction, sendableSteps } from '@tiptap/pm/collab';
 
 import "./Tiptap.css";
 import DropdownCard from "./DropdownCard";
@@ -34,7 +36,13 @@ const Tiptap = forwardRef(( props, ref ) => {
   const [markdown, setMarkdown] = useState("");
   const [selectedNode, setSelectedNode] = useState(null);
   const [provider, setProvider] = useState(null);
-  const { onSave, team_id, participants, yDoc, ...rest } = props;
+  const { onSave, team_id, participants, note, ...rest } = props;
+  const initialVersion = note?.version || 0;
+
+  useEffect(() => {
+    console.log(note);
+    editor.commands.setContent(note);
+  }, [note]);
 
   const commands = [
     { label: "table", action: (editor) => editor.chain().focus().insertTable({ rows: 2, cols: 2 }).run() },
@@ -114,24 +122,15 @@ const Tiptap = forwardRef(( props, ref ) => {
 
   const editor = useEditor({
     extensions: [
+      collab({
+        version: initialVersion, 
+      }),
       StarterKit.configure({
         codeBlock: false, // 기본 코드 블록 비활성화
         orderedList: false, // 기본 순서 없는 목록 비활성화
         bulletList: false, // 기본 순서 있는 목록 비활성화
         listItem: false, // 기본 리스트 아이템 비활성화
       }),
-      yDoc &&
-        Collaboration.configure({
-          document: yDoc,
-        }),
-      provider &&
-        CollaborationCursor.configure({
-          provider,
-          user: {
-            name: "Anonymous",
-            color: "#f783ac",
-          },
-        }),
       CodeBlockLowlight.configure({
         lowlight, // lowlight 문법 강조 사용
       }),
@@ -148,8 +147,12 @@ const Tiptap = forwardRef(( props, ref ) => {
       OrderedList,
       ListItem,
     ],
-    content: ``,
+    content: '',
     onUpdate: ({ editor }) => {
+      if (!editor || !editor.state) {
+        console.error("Editor state is not initialized.");
+        return;
+      }
       const serializer = new MarkdownSerializer(
         extendedMarkdownSerializerNodes,
         extendedMarkdownSerializerMarks
@@ -157,16 +160,27 @@ const Tiptap = forwardRef(( props, ref ) => {
       const markdownContent = serializer.serialize(editor.state.doc);
       setMarkdown(markdownContent);
 
-      const jsonContent = editor.getJSON();
+      console.log("Markdown content:", editor.getJSON());
+      noteWebRTCService.sendData("note", editor.getJSON());
+      // const sendable = sendableSteps(editor.state);
 
-      // Y.js 문서 업데이트
-      if (yDoc) {
-        const yXmlFragment = yDoc.getXmlFragment("prosemirror");
-        yXmlFragment.applyUpdate(new Uint8Array(JSON.stringify(jsonContent)));
-      }
+      // if (sendable) {
+      //   const { steps } = sendable;
 
-      // WebRTC 전송
-      noteWebRTCService.sendData("note", JSON.stringify(jsonContent));
+      //   const crdtPayload = {
+      //     version: sendable.version || 1, // 가짜 버전 값
+      //     steps: steps.map((step) => step.toJSON()), // JSON 직렬화
+      //     clientID: sendable.clientID || "fake-client-id", // 가짜 클라이언트 ID
+      //   };
+
+      //   // 가짜 데이터 전송 로그 출력
+      //   console.log("CRDT Payload:", crdtPayload);
+
+      //   // 실제 전송 함수
+      //   noteWebRTCService.sendData("note", crdtPayload);
+      // } else {
+      //   console.log("No sendable steps.");
+      // }
     },
 
     editorProps: {
@@ -192,22 +206,6 @@ const Tiptap = forwardRef(( props, ref ) => {
           }
           return true;
         }
-
-        // if (event.key === "Tab") {
-        //   const { $from } = state.selection;
-        //   const node = $from.nodeBefore;
-
-        //   if (node.type.name === "listItem") {
-        //     event.preventDefault();
-        //     editor.chain().focus().sinkListItem("listItem").run();
-        //     return true;
-        //   }
-
-        //   event.preventDefault();
-        //   const transaction = state.tr.insertText("    ", from, to);
-        //   dispatch(transaction);
-        //   return true;
-        // }
 
         if (event.key === "Backspace") {
           const { $from } = state.selection;

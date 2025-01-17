@@ -57,6 +57,15 @@ class NoteWebRTCService {
       this.dataChannel.send(message);
     }
   }
+
+  sendDeltaToServer(delta, target) {
+    const message = {
+      type: "delta",
+      target: target,
+      delta: delta,
+    };
+    this.dataChannel.send(JSON.stringify(message));
+  }
 }
 
 const noteWebRTCService = new NoteWebRTCService();

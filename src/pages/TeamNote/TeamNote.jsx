@@ -9,8 +9,6 @@ import webSocketService from "../../service/WebrtcSocketService";
 import noteWebRTCService from "../../service/NoteWebRTCService";
 import { yDocState, webRTCState } from "../../recoil/noteWebrtcAtoms";
 import { getNote } from "../../service/NoteService";
-import { WebrtcProvider } from "y-webrtc";
-import * as Y from "yjs";
 import "./TeamNote.css";
 
 const TeamNote = () => {
@@ -80,7 +78,7 @@ const TeamNote = () => {
   useEffect(() => {
     const fetchNote = async () => {
       try {
-        const note = await getNote("1");
+        const note = await getNote(team_id);
         if (note && note.note) {
           const parsedNote = JSON.parse(note.note);
 
@@ -92,7 +90,7 @@ const TeamNote = () => {
       }
     };
 
-    if (yDoc) fetchNote();
+    if (!yDoc) fetchNote();
   }, [yDoc]);
 
 
@@ -135,7 +133,7 @@ const TeamNote = () => {
       />
 
       <main>
-        <Tiptap ref={tiptapRef} onSave={handleSave} team_id={"1"} participants={participants} yDoc={yDoc} />
+        <Tiptap ref={tiptapRef} onSave={handleSave} team_id={"1"} participants={participants} note={yDoc} />
       </main>
       <Sidebar isOpen={isSidebarOpen} onClose={handleMenuClick} />
     </div>
