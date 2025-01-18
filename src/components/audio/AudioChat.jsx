@@ -1,48 +1,88 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { AiOutlineAudio } from 'react-icons/ai';
 import { MdCallEnd } from 'react-icons/md';
 import './AudioChat.css';
 import audioWebRTCService from '../../service/AudioWebRTCService';
+import audioSocketService from '../../service/AudioSocketService'; // ← 필요 시 import
 
 const AudioChat = ({ onClose }) => {
   const [participants, setParticipants] = useState([
-    { name: 'Alice', profilePic: 'https://octapi.lxzin.com/imageBlockProp/image/202210/11/720/0/6ccc1a45-331e-4222-b812-45276c062151.jpg', volume: 50 },
-    { name: 'Bob', profilePic: 'https://octapi.lxzin.com/imageBlockProp/image/202210/11/720/0/6ccc1a45-331e-4222-b812-45276c062151.jpg', volume: 50 },
-    { name: 'Charlie', profilePic: 'https://octapi.lxzin.com/imageBlockProp/image/202210/11/720/0/6ccc1a45-331e-4222-b812-45276c062151.jpg', volume: 50 }
-  ]); // 예시 참여자 리스트
+    { name: 'Alice', profilePic: '...', volume: 50 },
+    { name: 'Bob', profilePic: '...', volume: 50 },
+    { name: 'Charlie', profilePic: '...', volume: 50 },
+  ]);
 
   const remoteAudioRef = useRef(null);
-  const audioContextRef = useRef(new (window.AudioContext || window.webkitAudioContext)());
+  const audioContextRef = useRef(null);
   const gainNodesRef = useRef([]);
 
   useEffect(() => {
-    audioWebRTCService.initConnection((remoteStream) => {
-      if (remoteAudioRef.current) {
-        remoteAudioRef.current.srcObject = remoteStream;
-        remoteAudioRef.current.play();
+    audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)();
 
-        // 각 트랙에 대해 GainNode를 설정
-        remoteStream.getTracks().forEach((track, index) => {
-          const source = audioContextRef.current.createMediaStreamSource(new MediaStream([track]));
-          const gainNode = audioContextRef.current.createGain();
-          source.connect(gainNode).connect(audioContextRef.current.destination);
-          gainNodesRef.current[index] = gainNode;
+    // STUN/TURN 서버
+    const iceServers = [
+      { urls: 'stun:stun.l.google.com:19302' },
+      {
+        urls: 'turn:127.0.0.1:3478',
+        username: 'user',
+        credential: 'pass',
+      },
+    ];
+
+    // 1) WebSocket 연결
+    //    성공하면 -> 2) PeerConnection init -> 3) Offer
+    audioSocketService
+      .connect()
+      .then(() => {
+        console.log("WebSocket is open. Now initConnection...");
+
+        // 메시지 핸들러 등록 (이 타이밍에 등록해도 됨)
+        audioSocketService.addMessageHandler((msg) => {
+          audioWebRTCService.handleSocketMessage(msg);
         });
-      }
-    });
 
+        // 2) WebRTC 연결 초기화
+        return audioWebRTCService.initConnection(iceServers, (remoteStream) => {
+          // remoteStream이 갱신될 때마다 <audio> 태그에 연결
+          if (remoteAudioRef.current) {
+            remoteAudioRef.current.srcObject = remoteStream;
+            remoteAudioRef.current.play();
+
+            // 각 트랙에 대해 GainNode 설정
+            remoteStream.getTracks().forEach((track, index) => {
+              if (!gainNodesRef.current[index]) {
+                const source = audioContextRef.current.createMediaStreamSource(new MediaStream([track]));
+                const gainNode = audioContextRef.current.createGain();
+                source.connect(gainNode).connect(audioContextRef.current.destination);
+                gainNodesRef.current[index] = gainNode;
+              }
+            });
+          }
+        });
+      })
+      .then(() => {
+        console.log("initConnection done -> startCall");
+        // 3) Offer 보내기
+        audioWebRTCService.startCall();
+      })
+      .catch((err) => {
+        console.error("Failed to set up WebSocket or WebRTC:", err);
+      });
+
+    // 언마운트 시 정리
     return () => {
       audioWebRTCService.closeConnection();
-      audioContextRef.current.close();
+      if (audioContextRef.current) {
+        audioContextRef.current.close();
+      }
     };
   }, []);
 
   const handleVolumeChange = (index, event) => {
     const newVolume = event.target.value;
-    setParticipants(prevParticipants => {
-      const updatedParticipants = [...prevParticipants];
-      updatedParticipants[index].volume = newVolume;
-      return updatedParticipants;
+    setParticipants((prev) => {
+      const updated = [...prev];
+      updated[index].volume = newVolume;
+      return updated;
     });
 
     if (gainNodesRef.current[index]) {
@@ -52,34 +92,27 @@ const AudioChat = ({ onClose }) => {
 
   return (
     <div className="audio-chat p-4">
-      <div className="icon">
-        <AiOutlineAudio size={24} />
-      </div>
       <div className="participants">
-        <ul>
-          {participants.map((participant, index) => (
-            <li key={index} className="participant">
-              <div className="participant-container">
-                <img src={participant.profilePic} alt={participant.name} className="profile-pic" />
-                <span className="name">{participant.name}</span>
-                <input
-                  type="range"
-                  min="0"
-                  max="100"
-                  value={participant.volume}
-                  onChange={(event) => handleVolumeChange(index, event)}
-                  className="volume-slider"
-                />
-              </div>
-            </li>
-          ))}
-        </ul>
+        {participants.map((participant, index) => (
+          <div key={index} className="participant">
+            <img src={participant.profilePic} alt={participant.name} className="profile-pic" />
+            <p>{participant.name}</p>
+            <input
+              type="range"
+              min="0"
+              max="100"
+              value={participant.volume}
+              onChange={(event) => handleVolumeChange(index, event)}
+            />
+          </div>
+        ))}
       </div>
-      <div className="controls">
-        <button className="btn" onClick={onClose}>
-          <MdCallEnd size={24} />
-        </button>
-      </div>
+
+      <audio ref={remoteAudioRef} style={{ display: 'none' }} />
+
+      <button onClick={onClose} className="end-call-button">
+        <MdCallEnd size={24} />
+      </button>
     </div>
   );
 };
