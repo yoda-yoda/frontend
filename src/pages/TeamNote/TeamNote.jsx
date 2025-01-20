@@ -7,13 +7,13 @@ import Sidebar from "../../components/common/Sidebar";
 import { saveNote } from "../../service/NoteService";
 import webSocketService from "../../service/WebrtcSocketService";
 import noteWebRTCService from "../../service/NoteWebRTCService";
-import { yDocState, webRTCState } from "../../recoil/noteWebrtcAtoms";
+import { noteState, webRTCState } from "../../recoil/noteWebrtcAtoms";
 import { getNote } from "../../service/NoteService";
 import "./TeamNote.css";
 
 const TeamNote = () => {
   const { team_id } = useParams();
-  const [yDoc, setYDoc] = useRecoilState(yDocState);
+  const [note, setNote] = useRecoilState(noteState);
   const [webRTC, setWebRTC] = useRecoilState(webRTCState);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const participants = [
@@ -54,6 +54,23 @@ const TeamNote = () => {
 
       noteWebRTCService.createDataChannel("note/1", (data) => {
         console.log("DataChannel message:", data);
+        let parsed
+        try {
+          parsed = JSON.parse(data)
+        } catch (e) {
+          console.error("Failed to parse data:", e)
+          return
+        }
+        if (parsed.type === "ackSteps") {
+          // Tiptap ref에 있는 applyAckSteps 호출
+          tiptapRef.current?.applyAckSteps({
+            steps: parsed.steps,
+            version: parsed.version,
+            clientID: parsed.clientID,
+          })
+        } else {
+          console.log("Other message:", parsed)
+        }
       });
 
       const offer = await noteWebRTCService.createOffer();
@@ -71,6 +88,7 @@ const TeamNote = () => {
     return () => {
       webSocketService.removeMessageHandler(handleWebSocketMessage);
       webSocketService.disconnect();
+      noteWebRTCService.disconnect();
     };
   }, [team_id]);
 
@@ -83,15 +101,15 @@ const TeamNote = () => {
           const parsedNote = JSON.parse(note.note);
 
           // Y.Doc의 XmlFragment 가져오기
-          setYDoc(parsedNote)
+          setNote(parsedNote)
         }
       } catch (error) {
         console.error("Error fetching note:", error);
       }
     };
 
-    if (!yDoc) fetchNote();
-  }, [yDoc]);
+    if (!note) fetchNote();
+  }, [note]);
 
 
 
@@ -133,7 +151,7 @@ const TeamNote = () => {
       />
 
       <main>
-        <Tiptap ref={tiptapRef} onSave={handleSave} team_id={"1"} participants={participants} note={yDoc} />
+        <Tiptap ref={tiptapRef} onSave={handleSave} team_id={"1"} participants={participants} note={note} />
       </main>
       <Sidebar isOpen={isSidebarOpen} onClose={handleMenuClick} />
     </div>

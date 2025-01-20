@@ -18,9 +18,7 @@ import {
 import "highlight.js/styles/github-dark.css";
 import { DragHandle } from "@tiptap-pro/extension-drag-handle";
 
-import { EditorState } from '@tiptap/pm/state';
-import { Step } from '@tiptap/pm/transform';
-import { collab, receiveTransaction, sendableSteps } from '@tiptap/pm/collab';
+import { CollabExtension } from "./extension/CollabPlugin";
 
 import "./Tiptap.css";
 import DropdownCard from "./DropdownCard";
@@ -38,11 +36,7 @@ const Tiptap = forwardRef(( props, ref ) => {
   const [provider, setProvider] = useState(null);
   const { onSave, team_id, participants, note, ...rest } = props;
   const initialVersion = note?.version || 0;
-
-  useEffect(() => {
-    console.log(note);
-    editor.commands.setContent(note);
-  }, [note]);
+  const [isFirst, setIsFirst] = useState(true);
 
   const commands = [
     { label: "table", action: (editor) => editor.chain().focus().insertTable({ rows: 2, cols: 2 }).run() },
@@ -122,8 +116,16 @@ const Tiptap = forwardRef(( props, ref ) => {
 
   const editor = useEditor({
     extensions: [
-      collab({
-        version: initialVersion, 
+      CollabExtension.configure({
+        onSendableSteps: (payload) => {
+          console.log('Sendable steps:', payload)
+          noteWebRTCService.sendData(JSON.stringify(payload));
+        },
+        onReceiveSteps: (payload) => {
+          console.log('Received steps:', payload)
+        },
+        initialVersion: note?.version || 0,
+        clientID: 'user-1234', // 클라이언트 식별용
       }),
       StarterKit.configure({
         codeBlock: false, // 기본 코드 블록 비활성화
@@ -161,26 +163,6 @@ const Tiptap = forwardRef(( props, ref ) => {
       setMarkdown(markdownContent);
 
       console.log("Markdown content:", editor.getJSON());
-      noteWebRTCService.sendData("note", editor.getJSON());
-      // const sendable = sendableSteps(editor.state);
-
-      // if (sendable) {
-      //   const { steps } = sendable;
-
-      //   const crdtPayload = {
-      //     version: sendable.version || 1, // 가짜 버전 값
-      //     steps: steps.map((step) => step.toJSON()), // JSON 직렬화
-      //     clientID: sendable.clientID || "fake-client-id", // 가짜 클라이언트 ID
-      //   };
-
-      //   // 가짜 데이터 전송 로그 출력
-      //   console.log("CRDT Payload:", crdtPayload);
-
-      //   // 실제 전송 함수
-      //   noteWebRTCService.sendData("note", crdtPayload);
-      // } else {
-      //   console.log("No sendable steps.");
-      // }
     },
 
     editorProps: {
@@ -257,7 +239,33 @@ const Tiptap = forwardRef(( props, ref ) => {
     }
   };
 
+  useEffect(() => {
+    console.log(note);
+    if (editor && note && isFirst) {
+      setIsFirst(false);
+      editor.commands.setContent(note);
+      editor.view.dispatch(
+        editor.state.tr.setMeta('receivedSteps', {
+          steps: [], 
+          version: note.version ?? 0, 
+          clientID: 'user-1234'
+        })
+      )
+    }
+  }, [note, editor, isFirst]);
+
   useImperativeHandle(ref, () => ({
+    applyAckSteps: ({ steps, version, clientID }) => {
+      if (!editor) return
+      console.log("applyAckSteps called =>", { steps, version, clientID })
+      editor.view.dispatch(
+        editor.state.tr.setMeta("receivedSteps", {
+          steps,
+          version,
+          clientID,
+        })
+      )
+    },
     handleSave: () => {
       if (editor) {
         const jsonContent = editor.getJSON();

@@ -53,7 +53,7 @@ class NoteWebRTCService {
   }
 
   sendData(message) {
-    if (this.dataChannel) {
+    if (this.dataChannel && this.dataChannel.readyState === "open") {
       this.dataChannel.send(message);
     }
   }

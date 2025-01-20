@@ -1,5 +1,10 @@
 import { atom, selector } from "recoil";
 
+export const noteState = atom({
+  key: "noteState",
+  default: null,
+});
+
 // Y.js 문서 상태
 export const yDocState = atom({
   key: "yDocState",
