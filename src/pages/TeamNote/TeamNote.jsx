@@ -56,6 +56,19 @@ const TeamNote = () => {
       ],
     });
 
+    if (provider.current) {
+      const user = {
+        name: peerId,
+        email: peerId + "@example.com",
+      };
+      const userColor = "#" + ((1 << 24) * Math.random() | 0).toString(16); 
+      provider.current.awareness.setLocalStateField('user', {
+        name: user.name,
+        email: user.email,
+        color: userColor,
+      });
+    }
+
     const yTitle = yDoc.current.getMap("title");
       yTitle.observe(event => {
         console.log("Title changed:", event);
@@ -166,14 +179,19 @@ const TeamNote = () => {
       <main>
         <TitleButtons titles={titles} onTitleClick={handleTitleClick} onUpdateTitle={handleUpdateTitle} />
         <TitleInput title={currentTitle} onTitleChange={handleTitleChange} />
-        <Tiptap
-          ref={tiptapRef}
-          onSave={handleSave}
-          initialJson={note}
-          yDoc={yDoc.current}
-          provider={provider.current}
-          awareness={awareness.current}
-        />
+        {provider.current && awareness.current ? (
+          <Tiptap
+            ref={tiptapRef}
+            onSave={handleSave}
+            initialJson={note}
+            yDoc={yDoc.current}
+            provider={provider}
+            awareness={awareness.current}
+          />
+        ) : (
+          <div>Loading...</div>
+        )}
+
       </main>
       <Sidebar isOpen={isSidebarOpen} onClose={handleMenuClick} />
     </div>

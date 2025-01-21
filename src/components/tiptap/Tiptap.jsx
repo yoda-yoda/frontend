@@ -18,6 +18,7 @@ import BulletList from "@tiptap/extension-bullet-list";
 import OrderedList from "@tiptap/extension-ordered-list";
 import ListItem from "@tiptap/extension-list-item";
 import { all, createLowlight } from "lowlight";
+import CollaborationCursor from '@tiptap/extension-collaboration-cursor'
 import {
   MarkdownSerializer,
   defaultMarkdownSerializer,
@@ -28,7 +29,7 @@ import DropdownCard from "./DropdownCard";
 import "./Tiptap.css";
 
 import { YSyncExtension } from "./extension/YSyncExtension";
-import { ySyncPlugin, yCursorPlugin, yUndoPlugin } from "y-prosemirror";
+import { yUndoPlugin } from "y-prosemirror";
 
 const lowlight = createLowlight(all);
 
@@ -42,22 +43,17 @@ const Tiptap = forwardRef((props, ref) => {
     ...rest
   } = props;
 
-  // dropdown 명령어
   const [dropdownVisible, setDropdownVisible] = useState(false);
   const [commandList, setCommandList] = useState([]);
   const [dropdownPosition, setDropdownPosition] = useState({ x: 0, y: 0 });
 
   const [markdown, setMarkdown] = useState("");
-  const [selectedNode, setSelectedNode] = useState(null);
-  const [isFistRender, setIsFirstRender] = useState(true);
 
   const yXmlFragment = useRef(yDoc.getXmlFragment('prosemirror'));
 
-  // Tiptap Editor 생성
   const editor = useEditor({
     extensions: [
       YSyncExtension(yXmlFragment.current),
-      yCursorPlugin(awareness),
       yUndoPlugin(),
       StarterKit.configure({
         codeBlock: false,
@@ -88,10 +84,6 @@ const Tiptap = forwardRef((props, ref) => {
       );
       const markdownContent = serializer.serialize(editor.state.doc);
       setMarkdown(markdownContent);
-      console.log("Markdown content:", editor.getJSON());
-      // console.log("Current Y.Doc state:", yDoc.toJSON());
-      console.log("Current Y.XmlFragment state:", yXmlFragment.current.toString());
-
     },
   });
 
