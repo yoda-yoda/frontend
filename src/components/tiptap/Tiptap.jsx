@@ -4,12 +4,11 @@ import React, {
   useEffect,
   useImperativeHandle,
   useRef,
-  useCallback,
-  use,
 } from "react";
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import CodeBlockLowlight from "@tiptap/extension-code-block-lowlight";
+import DragHandle from '@tiptap-pro/extension-drag-handle-react'
 import Table from "@tiptap/extension-table";
 import TableRow from "@tiptap/extension-table-row";
 import TableCell from "@tiptap/extension-table-cell";
@@ -24,20 +23,22 @@ import {
   defaultMarkdownSerializer,
 } from "prosemirror-markdown";
 import "highlight.js/styles/github-dark.css";
-import { DragHandle } from "@tiptap-pro/extension-drag-handle";
 
 import DropdownCard from "./DropdownCard";
 import "./Tiptap.css";
 
 import { YSyncExtension } from "./extension/YSyncExtension";
+import { ySyncPlugin, yCursorPlugin, yUndoPlugin } from "y-prosemirror";
 
 const lowlight = createLowlight(all);
 
 const Tiptap = forwardRef((props, ref) => {
   const {
     onSave,
-    yDoc,            // Y.Doc (from TeamNote)
-    initialJson,     // 서버에서 가져온 ProseMirror JSON
+    yDoc,           
+    initialJson,     
+    provider,
+    awareness,
     ...rest
   } = props;
 
@@ -48,6 +49,7 @@ const Tiptap = forwardRef((props, ref) => {
 
   const [markdown, setMarkdown] = useState("");
   const [selectedNode, setSelectedNode] = useState(null);
+  const [isFistRender, setIsFirstRender] = useState(true);
 
   const yXmlFragment = useRef(yDoc.getXmlFragment('prosemirror'));
 
@@ -55,6 +57,8 @@ const Tiptap = forwardRef((props, ref) => {
   const editor = useEditor({
     extensions: [
       YSyncExtension(yXmlFragment.current),
+      yCursorPlugin(awareness),
+      yUndoPlugin(),
       StarterKit.configure({
         codeBlock: false,
         orderedList: false,
@@ -184,7 +188,6 @@ const Tiptap = forwardRef((props, ref) => {
     setDropdownVisible(false);
   };
 
-  // imperative handle
   useImperativeHandle(ref, () => ({
     handleSave: () => {
       if (!editor) return;
@@ -192,17 +195,22 @@ const Tiptap = forwardRef((props, ref) => {
       console.log("handleSave =>", jsonContent);
       onSave?.(jsonContent);
     },
+    handleGetNote: (parsedNote) => {
+      if (!editor) return;
+      if (parsedNote) {
+        editor.commands.setContent(parsedNote.content);
+      }
+    }
   }));
 
   return (
     <div className="container">
       <div
         className="editor-container border border-gray-300 rounded-md bg-white overflow-hidden no-tailwind"
-        style={{ minHeight: "750px", padding: "20px" }}
+        style={{ minHeight: "750px", padding: "20px", width: "100%" }}
       >
-        {selectedNode && (
-          <DragHandle editor={editor} node={selectedNode}>
-            <svg
+        <DragHandle editor={editor}>
+          <svg
               xmlns="http://www.w3.org/2000/svg"
               fill="none"
               viewBox="0 0 24 24"
@@ -210,10 +218,8 @@ const Tiptap = forwardRef((props, ref) => {
               stroke="currentColor"
             >
               <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 9h16.5m-16.5 6.75h16.5" />
-            </svg>
-          </DragHandle>
-        )}
-
+          </svg>
+        </DragHandle>
         <EditorContent editor={editor} style={{ width: "100%", height: "100%" }} />
 
         {dropdownVisible && (
