@@ -4,114 +4,96 @@ import { useRecoilState } from "recoil";
 import Tiptap from "../../components/tiptap/Tiptap";
 import NoteHeader from "../../components/common/NoteHeader";
 import Sidebar from "../../components/common/Sidebar";
-import { saveNote } from "../../service/NoteService";
-import webSocketService from "../../service/WebrtcSocketService";
-import noteWebRTCService from "../../service/NoteWebRTCService";
-import { noteState, webRTCState } from "../../recoil/noteWebrtcAtoms";
-import { getNote } from "../../service/NoteService";
+import { saveNote, getNote } from "../../service/NoteService";
+import { noteState } from "../../recoil/noteWebrtcAtoms";
 import "./TeamNote.css";
+import { v4 as uuidv4 } from "uuid";
+
+import * as Y from "yjs";
+import { WebrtcProvider } from "y-webrtc";
+import { Awareness } from "y-protocols/awareness";
 
 const TeamNote = () => {
   const { team_id } = useParams();
+  const peerId = uuidv4();
+
   const [note, setNote] = useRecoilState(noteState);
-  const [webRTC, setWebRTC] = useRecoilState(webRTCState);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const participants = [
-    { name: "Alice", profilePicture: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSJRVyLbmUUrp61vQ7_fkz35ViGCYwX8iSAZw&s", color: "#918A70"},
-    { name: "Bob", profilePicture: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSJRVyLbmUUrp61vQ7_fkz35ViGCYwX8iSAZw&s", color: "#9AE6E8"},
-    { name: "Charlie", profilePicture: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSJRVyLbmUUrp61vQ7_fkz35ViGCYwX8iSAZw&s", color: "#C51790"},
-  ];
-  
+
+  // Yjs 문서 & WebrtcProvider 레퍼런스
+  const yDoc = useRef(new Y.Doc());
+  const provider = useRef(null);
+  const awareness = useRef(new Awareness(yDoc.current));
+
+  // Tiptap 컴포넌트 접근
   const tiptapRef = useRef(null);
 
-  const handleMenuClick = () => {
-    setIsSidebarOpen(!isSidebarOpen);
-  };
+  const participants = [
+    { name: "Alice", profilePicture: "...", color: "#918A70" },
+    { name: "Bob", profilePicture: "...", color: "#9AE6E8" },
+    { name: "Charlie", profilePicture: "...", color: "#C51790" },
+  ];
 
   useEffect(() => {
-    webSocketService.connect();
+    const roomName = `note-${team_id}`;
+    if (!roomName || typeof roomName !== 'string' || roomName.trim() === '') {
+      console.error('Invalid room name:', roomName);
+      return;
+    }
 
-    const handleWebSocketMessage = async (message) => {
-      console.log("WebSocket message:", message);
-
-      if (message.type === "answer") {
-        await noteWebRTCService.setRemoteAnswer({
-          type: "answer",
-          sdp: message.sdp,
-        });
-      } else if (message.type === "iceCandidate") {
-        await noteWebRTCService.addIceCandidate(message.candidate);
-      }
-    };
-
-    webSocketService.addMessageHandler(handleWebSocketMessage);
-
-    const initiateWebRTC = async () => {
-      noteWebRTCService.initConnection([
+    // WebRTC provider 설정
+    provider.current = new WebrtcProvider(roomName, yDoc.current, {
+      signaling: [`ws://localhost:4444`],
+      awareness: awareness.current,
+      iceServers: [
         { urls: "stun:stun.l.google.com:19302" },
-        { urls: "turn:127.0.0.1:3478", username: "user", credential: "pass" },
-      ]);
+        {
+          urls: "turn:127.0.0.1:3478",
+          username: "user",
+          credential: "pass",
+        },
+      ],
+    });
 
-      noteWebRTCService.createDataChannel("note/1", (data) => {
-        console.log("DataChannel message:", data);
-        let parsed
-        try {
-          parsed = JSON.parse(data)
-        } catch (e) {
-          console.error("Failed to parse data:", e)
-          return
-        }
-        if (parsed.type === "ackSteps") {
-          // Tiptap ref에 있는 applyAckSteps 호출
-          tiptapRef.current?.applyAckSteps({
-            steps: parsed.steps,
-            version: parsed.version,
-            clientID: parsed.clientID,
-          })
-        } else {
-          console.log("Other message:", parsed)
-        }
-      });
-
-      const offer = await noteWebRTCService.createOffer();
-      if (!noteWebRTCService.peerConnection.localDescription) {
-        await noteWebRTCService.peerConnection.setLocalDescription(offer);
-      }
-      webSocketService.sendMessage({
-        type: "offer",
-        sdp: offer.sdp,
-      });
-    };
-
-    initiateWebRTC();
-
-    return () => {
-      webSocketService.removeMessageHandler(handleWebSocketMessage);
-      webSocketService.disconnect();
-      noteWebRTCService.disconnect();
-    };
-  }, [team_id]);
-
-
-  useEffect(() => {
+    // DB에서 문서 불러오기
     const fetchNote = async () => {
       try {
-        const note = await getNote(team_id);
-        if (note && note.note) {
-          const parsedNote = JSON.parse(note.note);
+        const noteData = await getNote(team_id);
+        if (noteData && noteData.note) {
+          const parsedNote = JSON.parse(noteData.note);
 
-          // Y.Doc의 XmlFragment 가져오기
-          setNote(parsedNote)
+          // 로컬 상태에 저장(굳이 안 해도 되지만, 표시용이라면)
+          setNote(parsedNote);
+          console.log("Note fetched:", parsedNote);
+
+          const yXmlFragment = yDoc.current.getXmlFragment("prosemirror");
+          yXmlFragment.delete(0, yXmlFragment.length);
+          yXmlFragment.insert(0, parsedNote); 
+          console.log('Yjs document updated with fetched note');
+        } else {
+          // 문서가 없으면 빈 객체
+          setNote({});
         }
       } catch (error) {
         console.error("Error fetching note:", error);
       }
     };
 
-    if (!note) fetchNote();
-  }, [note]);
+    // 처음 렌더링 시에만 불러오기
+    fetchNote();
 
+    return () => {
+      // 컴포넌트 언마운트 시 정리
+      if (provider.current) {
+        provider.current.destroy();
+      }
+      yDoc.current.destroy();
+    };
+  }, [team_id, setNote]);
 
+  const handleMenuClick = () => {
+    setIsSidebarOpen(!isSidebarOpen);
+  };
 
   const handleBack = () => {
     console.log("Back button clicked!");
@@ -125,33 +107,42 @@ const TeamNote = () => {
     console.log("Chat button clicked!");
   };
 
-  const handleSave = async (content) => {
-    const note = {
-      team_id: "1",
-      note: JSON.stringify(content),
-      created_at: new Date().toISOString(),
-    };
-
+  // Tiptap에서 “저장” 버튼을 누르면 이 함수가 호출되어
+  // ProseMirror JSON => DB에 저장
+  const handleSave = async (pmJson) => {
     try {
-      const response = await saveNote(note);
+      const noteToSave = {
+        team_id: team_id,
+        note: JSON.stringify(pmJson),
+        created_at: new Date().toISOString(),
+      };
+      await saveNote(noteToSave);
+      console.log("Note saved:", noteToSave);
     } catch (error) {
-      console.error(error);
+      console.error("Error saving note:", error);
     }
   };
 
   return (
-    <div className={`team-note ${isSidebarOpen ? 'sidebar-open' : ''}`}>
-      <NoteHeader 
-        participants={participants} 
+    <div className={`team-note ${isSidebarOpen ? "sidebar-open" : ""}`}>
+      <NoteHeader
+        participants={participants}
         onBack={handleBack}
-        onShare={handleShare} 
+        onShare={handleShare}
         onChat={handleChat}
         onMenu={handleMenuClick}
-        onSave={() => tiptapRef.current.handleSave()}
+        onSave={() => tiptapRef.current?.handleSave()}
       />
 
       <main>
-        <Tiptap ref={tiptapRef} onSave={handleSave} team_id={"1"} participants={participants} note={note} />
+        <Tiptap
+          ref={tiptapRef}
+          onSave={handleSave}
+          // DB에서 가져온 초기 ProseMirror JSON
+          initialJson={note}
+          // 실시간 협업용 Y.Doc
+          yDoc={yDoc.current}
+        />
       </main>
       <Sidebar isOpen={isSidebarOpen} onClose={handleMenuClick} />
     </div>
