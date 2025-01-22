@@ -3,6 +3,11 @@
 @import 'tailwindcss/utilities';
 
 @layer base {
+  @media (min-width: 1280px) {
+      .container {
+        max-width: none;
+      }
+    }
   .no-tailwind * {
     /* Tailwind 스타일의 일부만 초기화 */
     font-size: inherit;
@@ -21,40 +26,54 @@
     /* 기존 CSS 줄 높이 */
   }
 
+  .no-tailwind .editor-container {
+    margin-left: 0;
+    margin-right: 0;
+    padding-left: 0;
+    padding-right: 0;
+  }
+
   /* Heading 스타일 */
   .no-tailwind h1 {
     font-size: 2rem;
     font-weight: bold;
+    margin-left: 1.4rem;
   }
 
   .no-tailwind h2 {
     font-size: 1.75rem;
     font-weight: bold;
+    margin-left: 1.4rem;
   }
 
   .no-tailwind h3 {
     font-size: 1.5rem;
     font-weight: bold;
+    margin-left: 1.4rem;
   }
 
   .no-tailwind h4 {
     font-size: 1.25rem;
     font-weight: bold;
+    margin-left: 1.4rem;
   }
 
   .no-tailwind h5 {
     font-size: 1rem;
     font-weight: bold;
+    margin-left: 1.4rem;
   }
 
   .no-tailwind h6 {
     font-size: 0.875rem;
     font-weight: bold;
+    margin-left: 1.4rem;
   }
 
   /* Paragraph 스타일 */
   .no-tailwind p {
     margin-bottom: 1rem;
+    margin-left: 1.4rem;
   }
 
   /* 불릿 스타일 */

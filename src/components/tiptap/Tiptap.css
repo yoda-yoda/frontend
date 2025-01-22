@@ -7,7 +7,6 @@
     width: 100%;
     height: 100%;
     outline: none;
-    inline-height: 1.5;
     margin-bottom: 1em;
 
     > * + * {
@@ -68,9 +67,8 @@
 .editor {
     border: 1px solid #ddd;
     border-radius: 8px;
-    padding: 16px;
+    padding: 20px;
     font-family: Arial, sans-serif;
-    min-height: 300px;
     background-color: #f8f9fa;
 }
 
@@ -81,6 +79,10 @@ pre {
     padding: 16px;
     overflow-x: auto;
     font-family: "Fira Code", monospace;
+}
+
+p {
+    padding: 10px;
 }
 
 pre code {

@@ -212,7 +212,7 @@ const Tiptap = forwardRef((props, ref) => {
               <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 9h16.5m-16.5 6.75h16.5" />
           </svg>
         </DragHandle>
-        <EditorContent editor={editor} style={{ width: "100%", height: "100%" }} />
+        <EditorContent editor={editor} />
 
         {dropdownVisible && (
           <DropdownCard

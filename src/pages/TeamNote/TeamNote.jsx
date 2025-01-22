@@ -178,7 +178,7 @@ const TeamNote = () => {
         onSave={() => tiptapRef.current?.handleSave()}
       />
 
-      <main>
+      <main className="container">
         <TitleButtons titles={titles} onTitleClick={handleTitleClick} onUpdateTitle={handleUpdateTitle} />
         <TitleInput title={currentTitle} onTitleChange={handleTitleChange} />
         {provider.current && awareness.current ? (
