@@ -4,10 +4,11 @@ import { Stage, Layer, Line, Rect, Circle, Text, Image, Transformer } from 'reac
 import { toolState, colorState } from '../../recoil/canvasToolAtoms';
 import { createCanvas, getCanvasByTeamID } from '../../service/CanvasService';
 
-const CanvasArea = forwardRef(({ teamId }, ref) => {
+const CanvasArea = forwardRef(({ teamId, yDoc, provider, awareness, canvasSize, onZoom }, ref) => {
   const [tool, setTool] = useRecoilState(toolState);
   const color = useRecoilValue(colorState);
   const stageRef = useRef(null);
+  const layerRef = useRef(null);
   const [shapes, setShapes] = useState([]);
   const [isDrawing, setIsDrawing] = useState(false);
   const [currentShape, setCurrentShape] = useState(null);
@@ -17,6 +18,25 @@ const CanvasArea = forwardRef(({ teamId }, ref) => {
   const [textEditPosition, setTextEditPosition] = useState({ x: 0, y: 0 });
   const [textEditIndex, setTextEditIndex] = useState(null);
   const transformerRef = useRef(null);
+  const [scale, setScale] = useState(1);
+  const [position, setPosition] = useState({ x: 0, y: 0 });
+
+  useEffect(() => {
+    const yShapes = yDoc.getArray('shapes');
+
+    const updateKonvaShapes = () => {
+      const newShapes = yShapes.toArray();
+      setShapes(newShapes);
+    };
+
+    yShapes.observe(updateKonvaShapes);
+    updateKonvaShapes();
+
+    return () => {
+      yShapes.unobserve(updateKonvaShapes);
+    };
+  }, [yDoc]);
+
 
   useImperativeHandle(ref, () => ({
     saveCanvas: async () => {
@@ -30,23 +50,33 @@ const CanvasArea = forwardRef(({ teamId }, ref) => {
     }
   }));
 
-  useEffect(() => {
-    const fetchCanvas = async () => {
-      if (!teamId) {
-        console.error('teamId is undefined');
-        return;
-      }
-      try {
-        const canvasData = await getCanvasByTeamID(teamId);
-        setShapes(JSON.parse(canvasData.canvas || '[]'));
-      } catch (error) {
-        console.error('Error fetching canvas data:', error);
-      }
+  const handleWheel = (e) => {
+    e.evt.preventDefault();
+    const scaleBy = 1.1;
+    const stage = stageRef.current;
+    const oldScale = stage.scaleX();
+    const pointer = stage.getPointerPosition();
+
+    const mousePointTo = {
+      x: (pointer.x - stage.x()) / oldScale,
+      y: (pointer.y - stage.y()) / oldScale,
     };
 
-    fetchCanvas();
-  }, [teamId]);
+    const newScale = e.evt.deltaY > 0 ? oldScale * scaleBy : oldScale / scaleBy;
+    setScale(newScale);
 
+    const newPos = {
+      x: pointer.x - mousePointTo.x * newScale,
+      y: pointer.y - mousePointTo.y * newScale,
+    };
+    setPosition(newPos);
+
+    stage.scale({ x: newScale, y: newScale });
+    stage.position(newPos);
+    stage.batchDraw();
+
+    onZoom(newScale);
+  };
 
   const getCursorStyle = () => {
     switch (tool) {
@@ -85,40 +115,55 @@ const CanvasArea = forwardRef(({ teamId }, ref) => {
     }
   }, [selectedShapeIndex]);
 
-  const handleMouseDown = (e) => {
-    console.log('color', color);
-    if (!tool || tool === 'mouse' || tool === 'eraser') return;
-    setIsDrawing(true);
-    const pos = e.target.getStage().getPointerPosition();
-    if (tool === 'pencil' || tool === 'pen') {
-      setCurrentShape({ tool, points: [pos.x, pos.y], color });
-    } else if (tool === 'square' || tool === 'circle') {
-      setCurrentShape({ tool, x: pos.x, y: pos.y, width: 0, height: 0, color });
-    } else if (tool === 'text') {
-      setCurrentShape({ tool, x: pos.x, y: pos.y, text: 'Sample Text', color });
-    }
+const handleMouseDown = (e) => {
+  console.log('color', color);
+  if (!tool || tool === 'mouse' || tool === 'eraser') return;
+  setIsDrawing(true);
+  const stage = e.target.getStage();
+  const pointer = stage.getPointerPosition();
+  const pos = {
+    x: (pointer.x - position.x) / scale,
+    y: (pointer.y - position.y) / scale,
   };
 
-  const handleMouseMove = (e) => {
-    if (!isDrawing || !tool) return;
-    const pos = e.target.getStage().getPointerPosition();
-    if (tool === 'pencil' || tool === 'pen') {
-      const newPoints = currentShape.points.concat([pos.x, pos.y]);
-      setCurrentShape({ ...currentShape, points: newPoints });
-    } else if (tool === 'square') {
-      const newWidth = pos.x - currentShape.x;
-      const newHeight = pos.y - currentShape.y;
-      setCurrentShape({ ...currentShape, width: newWidth, height: newHeight });
-    } else if (tool === 'circle') {
-      const radius = Math.sqrt(Math.pow(pos.x - currentShape.x, 2) + Math.pow(pos.y - currentShape.y, 2));
-      setCurrentShape({ ...currentShape, radius });
-    }
+  if (tool === 'pencil' || tool === 'pen') {
+    setCurrentShape({ tool, points: [pos.x, pos.y], color });
+  } else if (tool === 'square' || tool === 'circle') {
+    setCurrentShape({ tool, x: pos.x, y: pos.y, width: 0, height: 0, color });
+  } else if (tool === 'text') {
+    setCurrentShape({ tool, x: pos.x, y: pos.y, text: 'Sample Text', color });
+  }
+};
+
+const handleMouseMove = (e) => {
+  if (!isDrawing || !tool) return;
+  const stage = e.target.getStage();
+  const pointer = stage.getPointerPosition();
+  const pos = {
+    x: (pointer.x - position.x) / scale,
+    y: (pointer.y - position.y) / scale,
   };
+
+  if (tool === 'pencil' || tool === 'pen') {
+    const newPoints = currentShape.points.concat([pos.x, pos.y]);
+    setCurrentShape({ ...currentShape, points: newPoints });
+  } else if (tool === 'square') {
+    const newWidth = pos.x - currentShape.x;
+    const newHeight = pos.y - currentShape.y;
+    setCurrentShape({ ...currentShape, width: newWidth, height: newHeight });
+  } else if (tool === 'circle') {
+    const radius = Math.sqrt(Math.pow(pos.x - currentShape.x, 2) + Math.pow(pos.y - currentShape.y, 2));
+    setCurrentShape({ ...currentShape, radius });
+  }
+};
 
   const handleMouseUp = () => {
     if (!tool || tool.tool === 'mouse' || tool.tool === 'eraser') return;
     setIsDrawing(false);
+    const newShape = { ...currentShape, id: `shape-${Date.now()}` };
     setShapes([...shapes, currentShape]);
+    const yShapes = yDoc.getArray('shapes');
+    yShapes.push([newShape]);
     setCurrentShape(null);
   };
 
@@ -152,30 +197,48 @@ const CanvasArea = forwardRef(({ teamId }, ref) => {
     if (tool === 'eraser') {
       const updatedShapes = shapes.filter((_, i) => i !== index);
       setShapes(updatedShapes);
+
+      // Yjs에서 도형 삭제
+      const yShapes = yDoc.getArray('shapes');
+      yShapes.delete(index, 1);
     } else {
       setSelectedShapeIndex(index);
     }
   };
 
   const handleDragEnd = (e, index) => {
-    const updatedShapes = shapes.map((shape, i) => {
-      if (i === index) {
-        return { ...shape, x: e.target.x(), y: e.target.y() };
-      }
-      return shape;
-    });
+    const updatedShape = {
+      ...shapes[index],
+      x: e.target.x(),
+      y: e.target.y(),
+    };
+
+    const updatedShapes = shapes.map((shape, i) => (i === index ? updatedShape : shape));
     setShapes(updatedShapes);
+
+    const yShapes = yDoc.getArray('shapes');
+    yShapes.delete(index, 1);
+    yShapes.insert(index, [updatedShape]);
   };
 
   const handleTransformEnd = (e, index) => {
     const node = e.target;
-    const updatedShapes = shapes.map((shape, i) => {
-      if (i === index) {
-        return { ...shape, x: node.x(), y: node.y(), width: node.width() * node.scaleX(), height: node.height() * node.scaleY(), scaleX: 1, scaleY: 1 };
-      }
-      return shape;
-    });
+    const updatedShape = {
+      ...shapes[index],
+      x: node.x(),
+      y: node.y(),
+      width: node.width() * node.scaleX(),
+      height: node.height() * node.scaleY(),
+      scaleX: 1,
+      scaleY: 1,
+    };
+
+    const updatedShapes = shapes.map((shape, i) => (i === index ? updatedShape : shape));
     setShapes(updatedShapes);
+
+    const yShapes = yDoc.getArray('shapes');
+    yShapes.delete(index, 1);
+    yShapes.insert(index, [updatedShape]);
   };
 
   const saveCanvasAsJSON = async () => {
@@ -194,11 +257,16 @@ const CanvasArea = forwardRef(({ teamId }, ref) => {
         width={window.innerWidth}
         height={window.innerHeight}
         ref={stageRef}
+        onWheel={handleWheel}
+        scaleX={scale}
+        scaleY={scale}
+        x={position.x}
+        y={position.y}
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
       >
-        <Layer>
+        <Layer ref={layerRef} width={canvasSize.width} height={canvasSize.height}>
           {shapes.map((shape, index) => {
             if (!shape || !shape.tool) return null;
             if (shape.tool === 'pencil' || shape.tool === 'pen') {

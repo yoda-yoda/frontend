@@ -1,0 +1,17 @@
+.canvas-tabs {
+    display: flex;
+    border-bottom: 1px solid #ccc;
+}
+
+.canvas-tab {
+    padding: 10px 20px;
+    cursor: pointer;
+    border: 1px solid #ccc;
+    border-bottom: none;
+    background-color: #f9f9f9;
+}
+
+.canvas-tab.active {
+    background-color: #fff;
+    border-bottom: 1px solid #fff;
+}
