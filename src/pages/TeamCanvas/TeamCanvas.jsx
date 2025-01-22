@@ -6,7 +6,7 @@ import NoteHeader from '../../components/common/NoteHeader';
 import CanvasArea from '../../components/canvas/CanvasArea';
 import Sidebar from '../../components/common/Sidebar';
 import CanvasTabs from '../../components/canvas/CanvasTabs';
-import { getCanvasByTeamID } from '../../service/CanvasService';
+import { getCanvasByTeamID, getCanvasByID } from '../../service/CanvasService';
 
 import * as Y from 'yjs';
 import { WebrtcProvider } from 'y-webrtc';
@@ -59,11 +59,13 @@ const TeamCanvas = () => {
 
     const initialTabs = async () => {
       try {
-        const canvasData = await getCanvasByTeamID(teamId);
-        const shapes = JSON.parse(canvasData.canvas || '[]');
-        const yShapes = yDoc.current.getArray('shapes');
-        yShapes.push([shapes]);
-        setTabs([{ title: 'Current Canvas', shapes }]); // 초기 탭 설정
+        const canvases = await getCanvasByTeamID(teamId);
+        const tabsData = canvases.map(canvas => ({
+          id: canvas.id,
+          title: canvas.title,
+          shapes: JSON.parse(canvas.canvas || '[]')
+        }));
+        setTabs(tabsData);
       } catch (error) {
         console.error('Error fetching canvas data:', error);
       }
@@ -80,14 +82,28 @@ const TeamCanvas = () => {
     };
   }, [teamId]);  
 
-  const handleTabClick = (index) => {
-    // setActiveTab(index);
-    // const selectedShapes = tabs[index].shapes;
-    // const yShapes = yDoc.current.getArray('shapes');
-    // yShapes.delete(0, yShapes.length);
-    // yShapes.push(selectedShapes);
-  };
+  const handleTabClick = async (index) => {
+    setActiveTab(index);
+    const selectedTab = tabs[index];
+    const yShapes = yDoc.current.getArray('shapes');
 
+    if (!selectedTab.id) {
+      // 아이디가 없는 경우 빈 캔버스를 출력
+      yShapes.delete(0, yShapes.length);
+      yShapes.push([]);
+      return;
+    }
+
+    try {
+      const canvasData = await getCanvasByID(selectedTab.id);
+      const shapes = JSON.parse(canvasData.canvas || '[]');
+      yShapes.delete(0, yShapes.length);
+      yShapes.push(shapes);
+    } catch (error) {
+      console.error('Error fetching canvas data:', error);
+    }
+  };
+  
   const handleZoom = (newScale) => {
     const newCanvasSize = {
       width: window.innerWidth * newScale,
@@ -100,9 +116,15 @@ const TeamCanvas = () => {
     setTool(selectedTool);
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (canvasAreaRef.current) {
-      canvasAreaRef.current.saveCanvas();
+      const response = await canvasAreaRef.current.saveCanvas();
+      console.log('Save response:', response);
+      if (response && response.id) {
+        setTabs(tabs.map((tab, index) => 
+          index === activeTab ? { ...tab, id: response.id } : tab
+        ));
+      }
     }
   };
 
@@ -110,12 +132,54 @@ const TeamCanvas = () => {
     setIsSidebarOpen(!isSidebarOpen);
   };
 
+  const handleUpdateTitle = (id, newTitle) => {
+    setTabs(tabs.map(tab => (tab.id === id ? { ...tab, title: newTitle } : tab)));
+  };
+
+  const handleDeleteTab = (id) => {
+    setTabs(tabs.filter(tab => tab.id !== id));
+    if (activeTab >= tabs.length - 1) {
+      setActiveTab(tabs.length - 2);
+    }
+  };
+
+  const handleAddTab = () => {
+    const newTab = {
+      id: ``,
+      title: 'Untitled',
+      shapes: []
+    };
+    setTabs([...tabs, newTab]);
+    setActiveTab(tabs.length);
+    const yShapes = yDoc.current.getArray('shapes');
+    yShapes.delete(0, yShapes.length);
+    yShapes.push([]);
+  };
+
   return (
     <div className={`TeamCanvas ${isSidebarOpen ? 'sidebar-open' : ''}`}>
       <NoteHeader onBack={() => {}} onShare={() => {}} onChat={() => {}} onMenu={handleMenuClick} onSave={handleSave} />
-      <CanvasTabs tabs={tabs} activeTab={activeTab} onTabClick={handleTabClick} />
+      <CanvasTabs 
+        tabs={tabs} 
+        activeTab={activeTab} 
+        onTabClick={handleTabClick} 
+        onUpdateTitle={handleUpdateTitle} 
+        onDeleteTab={handleDeleteTab}
+        onAddTab={handleAddTab}
+      />
       <CanvasToolbar className="CanvasToolbar" onSelectTool={handleSelectTool} />
-      <CanvasArea ref={canvasAreaRef} tool={tool} teamId={teamId} yDoc={yDoc.current} provider={provider.current} awareness={awareness.current} onZoom={handleZoom} canvasSize={canvasSize} />
+      <CanvasArea 
+        ref={canvasAreaRef} 
+        tool={tool} 
+        teamId={teamId} 
+        yDoc={yDoc.current} 
+        provider={provider.current} 
+        awareness={awareness.current} 
+        onZoom={handleZoom} 
+        canvasSize={canvasSize} 
+        canvasId={tabs[activeTab]?.id} 
+        title={tabs[activeTab]?.title}
+      />
       <Sidebar isOpen={isSidebarOpen} onClose={handleMenuClick} />
     </div>
   );

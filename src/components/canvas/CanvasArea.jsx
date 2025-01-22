@@ -4,7 +4,7 @@ import { Stage, Layer, Line, Rect, Circle, Text, Image, Transformer } from 'reac
 import { toolState, colorState } from '../../recoil/canvasToolAtoms';
 import { createCanvas, getCanvasByTeamID } from '../../service/CanvasService';
 
-const CanvasArea = forwardRef(({ teamId, yDoc, provider, awareness, canvasSize, onZoom }, ref) => {
+const CanvasArea = forwardRef(({ teamId, yDoc, provider, awareness, canvasSize, onZoom, canvasId, title }, ref) => {
   const [tool, setTool] = useRecoilState(toolState);
   const color = useRecoilValue(colorState);
   const stageRef = useRef(null);
@@ -40,10 +40,12 @@ const CanvasArea = forwardRef(({ teamId, yDoc, provider, awareness, canvasSize, 
 
   useImperativeHandle(ref, () => ({
     saveCanvas: async () => {
-      const canvasData = { team_id: teamId, canvas: JSON.stringify(shapes) };
+      const canvasData = { id: canvasId, team_id: teamId, canvas: JSON.stringify(shapes), title: title };
       try {
-        await createCanvas(canvasData);
+        const response = await createCanvas(canvasData);
+        console.log("response", response);  
         console.log('Canvas saved successfully');
+        return response.data;
       } catch (error) {
         console.error('Error saving canvas:', error);
       }
