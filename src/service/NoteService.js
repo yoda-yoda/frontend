@@ -28,11 +28,9 @@ const getNotesByTeamID = async (teamId) => {
   }
 };
 
-const getNoteByTeamIDAndTitle = async (teamId, title) => {
+const getNoteByID = async (id) => {
   try {
-    const encodedTitle = encodeURIComponent(title);
-
-    const response = await axios.get(`http://localhost:4000/notes/${teamId}/${encodedTitle}`, {
+    const response = await axios.get(`http://localhost:4000/note/${id}`, {
       headers: {
         'Content-Type': 'application/json',
       },
@@ -44,9 +42,9 @@ const getNoteByTeamIDAndTitle = async (teamId, title) => {
   }
 };
 
-const updateNoteTitle = async (teamId, oldTitle, newTitle) => {
+const updateNoteTitle = async (id, newTitle) => {
   try {
-    const response = await axios.put(`http://localhost:4000/notes/${teamId}/${oldTitle}/${newTitle}`, null, {
+    const response = await axios.put(`http://localhost:4000/note/${id}/title`, { new_title: newTitle }, {
       headers: {
         'Content-Type': 'application/json',
       },
@@ -58,4 +56,18 @@ const updateNoteTitle = async (teamId, oldTitle, newTitle) => {
   }
 };
 
-export { saveNote, getNotesByTeamID, getNoteByTeamIDAndTitle, updateNoteTitle };
+const deleteNoteByID = async (id) => {
+  try {
+    const response = await axios.delete(`http://localhost:4000/note/${id}`, {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+    return response.data;
+  } catch (error) {
+    console.error('There was a problem with the axios operation:', error);
+    throw error;
+  }
+};
+
+export { saveNote, getNotesByTeamID, getNoteByID, updateNoteTitle, deleteNoteByID };

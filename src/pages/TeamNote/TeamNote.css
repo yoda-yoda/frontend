@@ -14,7 +14,6 @@
 }
 
 main {
-    position: relative;
     z-index: 1000;
     /* 메인의 z-index를 사이드바보다 높게 설정 */
 }
