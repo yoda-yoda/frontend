@@ -20,6 +20,7 @@ const TeamCanvas = () => {
   const [canvasSize, setCanvasSize] = useState({ width: window.innerWidth, height: window.innerHeight });
   const [tabs, setTabs] = useState([]);
   const [activeTab, setActiveTab] = useState(0);
+  const [image, setImage] = useState(null);
 
   const yDoc = useRef(new Y.Doc());
   const provider = useRef(null);
@@ -45,6 +46,7 @@ const TeamCanvas = () => {
         },
       ],
     });
+
 
     // 랜덤 사용자 정보 생성
     const user = {
@@ -97,13 +99,26 @@ const TeamCanvas = () => {
     try {
       const canvasData = await getCanvasByID(selectedTab.id);
       const shapes = JSON.parse(canvasData.canvas || '[]');
+      const processedShapes = await Promise.all(shapes.map(async shape => {
+        if (shape.tool === 'image' && shape.imageUrl) {
+          return new Promise(resolve => {
+            const image = new window.Image();
+            image.src = shape.imageUrl;
+            image.onload = () => {
+              resolve({ ...shape, image });
+            };
+          });
+        }
+          return shape;
+      }));
+      console.log('Processed shapes:', processedShapes);
       yShapes.delete(0, yShapes.length);
-      yShapes.push(shapes);
+      yShapes.push(processedShapes);
     } catch (error) {
       console.error('Error fetching canvas data:', error);
     }
   };
-  
+
   const handleZoom = (newScale) => {
     const newCanvasSize = {
       width: window.innerWidth * newScale,
@@ -156,6 +171,11 @@ const TeamCanvas = () => {
     yShapes.push([]);
   };
 
+  const handleImageUpload = (imageData) => {
+    console.log('Uploaded image data:', imageData);
+    setImage(imageData);
+  };  
+
   return (
     <div className={`TeamCanvas ${isSidebarOpen ? 'sidebar-open' : ''}`}>
       <NoteHeader onBack={() => {}} onShare={() => {}} onChat={() => {}} onMenu={handleMenuClick} onSave={handleSave} />
@@ -167,7 +187,7 @@ const TeamCanvas = () => {
         onDeleteTab={handleDeleteTab}
         onAddTab={handleAddTab}
       />
-      <CanvasToolbar className="CanvasToolbar" onSelectTool={handleSelectTool} />
+      <CanvasToolbar className="CanvasToolbar" onSelectTool={handleSelectTool} onImageUpload={handleImageUpload} />
       <CanvasArea 
         ref={canvasAreaRef} 
         tool={tool} 
@@ -179,6 +199,7 @@ const TeamCanvas = () => {
         canvasSize={canvasSize} 
         canvasId={tabs[activeTab]?.id} 
         title={tabs[activeTab]?.title}
+        image={image}
       />
       <Sidebar isOpen={isSidebarOpen} onClose={handleMenuClick} />
     </div>
