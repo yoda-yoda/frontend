@@ -73,6 +73,7 @@ const TeamNote = () => {
       yTitle.observe(event => {
         console.log("Title changed:", event);
         const newTitle = yTitle.get("currentTitle");
+        console.log("New title:", newTitle);
         if (newTitle !== currentTitle) {
           setCurrentTitle(newTitle);
         }

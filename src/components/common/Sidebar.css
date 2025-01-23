@@ -53,7 +53,7 @@
     cursor: pointer;
     font-weight: normal;
     /* 폰트를 더 얇게 설정 */
-    margin-bottom: 10px;
+    margin-bottom: 2px;
     /* 팀 이름 간의 간격을 넓힘 */
 }
 
@@ -68,6 +68,6 @@
 }
 
 .team-dropdown.open {
-    max-height: 100px;
+    max-height: 120px;
     /* 드롭다운이 열릴 때의 최대 높이 설정 */
 }
