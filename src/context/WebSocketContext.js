@@ -4,7 +4,6 @@ import React, { createContext, useContext, useEffect, useRef, useState } from 'r
 const WebSocketContext = createContext();
 
 export const WebSocketProvider = ({ children }) => {
-  console.log('WebSocketProvider 렌더링됨.');
   const socketRef = useRef(null);
   const [isConnected, setIsConnected] = useState(false);
   const [messageQueue, setMessageQueue] = useState([]);
@@ -12,6 +11,8 @@ export const WebSocketProvider = ({ children }) => {
   const reconnectAttempts = useRef(0);
   const maxReconnectAttempts = 5;
   const connectingRef = useRef(false); // 연결 중인지 추적
+
+  const messageListenersRef = useRef([]);
 
   const connect = () => {
     if (socketRef.current || connectingRef.current) {
@@ -58,7 +59,8 @@ export const WebSocketProvider = ({ children }) => {
     socket.onmessage = (event) => {
       const message = JSON.parse(event.data);
       console.log('WebSocket message:', message);
-      // 수신된 메시지 처리 로직 추가
+      // 모든 메시지 리스너에 메시지 전달
+      messageListenersRef.current.forEach(listener => listener(message));
     };
 
     socketRef.current = socket;
@@ -86,8 +88,15 @@ export const WebSocketProvider = ({ children }) => {
     }
   };
 
+  const addMessageListener = (listener) => {
+    messageListenersRef.current.push(listener);
+    return () => {
+      messageListenersRef.current = messageListenersRef.current.filter(l => l !== listener);
+    };
+  };
+
   return (
-    <WebSocketContext.Provider value={{ sendMessage, isConnected, connectionError }}>
+    <WebSocketContext.Provider value={{ sendMessage, isConnected, connectionError, addMessageListener }}>
       {children}
     </WebSocketContext.Provider>
   );

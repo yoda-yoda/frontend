@@ -1,5 +1,5 @@
 // TeamCanvas.js
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useRef, useState, useEffect, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
 import CanvasToolbar from '../../components/canvas/CanvasToolbar';
 import './TeamCanvas.css';
@@ -26,7 +26,10 @@ const TeamCanvas = () => {
   const [tabs, setTabs] = useState([]);
   const [activeTab, setActiveTab] = useState(0);
   const [image, setImage] = useState(null);
-  const { sendMessage, isConnected, connectionError } = useWebSocket();
+  
+  const { sendMessage, isConnected, connectionError, addMessageListener } = useWebSocket();
+
+  const [participants, setParticipants] = useState([]); // 컴포넌트 상태로 참여자 관리
 
   const yDoc = useRef(new Y.Doc());
   const provider = useRef(null);
@@ -89,6 +92,60 @@ const TeamCanvas = () => {
     };
   }, [teamId]);
 
+  useEffect(() => {
+    const fetchTitles = async () => {
+      try {
+        const canvases = await getCanvasByTeamID(teamId);
+        const tabsData = canvases.map(canvas => ({
+          id: canvas.id,
+          title: canvas.title ?? 'Untitled',
+          shapes: JSON.parse(canvas.canvas || '[]')
+        }));
+        setTabs(tabsData);
+      } catch (error) {
+        console.error("Error fetching canvas data:", error);
+      }
+    };
+
+    fetchTitles();
+  }, [teamId]);
+
+  // WebSocket 메시지 처리
+  const handleMessage = useCallback((message) => {
+    console.log('handleMessage called with:', message);
+    if (message.action === 'updateParticipants') {
+      if (Array.isArray(message.participants)) {
+        console.log('Updating participants:', message.participants);
+        setParticipants(message.participants);
+      } else {
+        console.error("Invalid participants data:", message.participants);
+      }
+    }
+  }, [teamId]);
+
+  useEffect(() => {
+    // 메시지 리스너 등록
+    const unsubscribe = addMessageListener(handleMessage);
+    console.log('Listener registered for Team:', teamId);
+
+    // 초기 참여자 목록 요청
+    if (sendMessage) {
+      const payload = {
+        action: 'getParticipants',
+        team_id: teamId,
+        kind: 'canvas',
+      };
+      console.log('Sending getParticipants:', payload);
+      sendMessage(JSON.stringify(payload));
+    }
+
+    return () => {
+      // 컴포넌트 언마운트 시 리스너 해제
+      if (unsubscribe) unsubscribe();
+      console.log('Listener unregistered for Team:', teamId);
+    };
+  }, [addMessageListener, teamId, sendMessage, handleMessage]);
+
   const handleTabClick = async (index) => {
     setActiveTab(index);
     const selectedTab = tabs[index];
@@ -107,10 +164,10 @@ const TeamCanvas = () => {
       const processedShapes = await Promise.all(shapes.map(async shape => {
         if (shape.tool === 'image' && shape.imageUrl) {
           return new Promise(resolve => {
-            const image = new window.Image();
-            image.src = shape.imageUrl;
-            image.onload = () => {
-              resolve({ ...shape, image });
+            const img = new window.Image();
+            img.src = shape.imageUrl;
+            img.onload = () => {
+              resolve({ ...shape, image: img });
             };
           });
         }
@@ -188,6 +245,9 @@ const TeamCanvas = () => {
         team_id: teamId, 
         kind: 'canvas',
         participant: peerId, 
+        name: 'Your Name', // 실제 사용자 이름으로 변경
+        profilePicture: 'https://i.namu.wiki/i/qEQTv7w9d-OZ6l9g5pF87sgGMaXwjFaLecd_VeZef-L9jNn86zKPX8CwIhkyPKo4dAp-7f83ZT25fpJr-UeFk0bGyroMp0to_XgnsLD5UZLKDBnqlMuKsUtVctbNLGWYNAtWdJGs7gfN8SLMOnNeuw.webp', // 실제 프로필 사진 URL로 변경
+        color: '#FF0000', // 원하는 색상으로 변경
       };
       console.log('Adding participant:', payload);
       sendMessage(JSON.stringify(payload));
@@ -213,7 +273,9 @@ const TeamCanvas = () => {
 
     if (isConnected) {
       heartbeatInterval = setInterval(() => {
-        sendMessage(JSON.stringify({ action: 'heartbeat' }));
+        const heartbeatPayload = { action: 'heartbeat' };
+        console.log('Sending heartbeat:', heartbeatPayload);
+        sendMessage(JSON.stringify(heartbeatPayload));
       }, 30000); // 30초마다
     }
 
@@ -225,7 +287,14 @@ const TeamCanvas = () => {
   return (
     <div className={`TeamCanvas ${isSidebarOpen ? 'sidebar-open' : ''}`}>
       {connectionError && <div className="error">{connectionError}</div>}
-      <NoteHeader onBack={() => {}} onShare={() => {}} onChat={() => {}} onMenu={handleMenuClick} onSave={handleSave} />
+      <NoteHeader
+        participants={participants}
+        onBack={() => {}}
+        onShare={() => {}}
+        onChat={() => {}}
+        onMenu={handleMenuClick}
+        onSave={handleSave}
+      />
       <CanvasTabs 
         tabs={tabs} 
         activeTab={activeTab} 
