@@ -15,14 +15,18 @@ import * as Y from "yjs";
 import { WebrtcProvider } from "y-webrtc";
 import { Awareness } from "y-protocols/awareness";
 
+import { useWebSocket } from '../../context/WebSocketContext';
+
 const TeamNote = () => {
   const { team_id } = useParams();
-  const peerId = uuidv4();
+  const peerIdRef = useRef(uuidv4());
+  const peerId = peerIdRef.current;
 
   const [note, setNote] = useRecoilState(noteState);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [titles, setTitles] = useState([]);
   const [currentTitle, setCurrentTitle] = useState(null);
+  const { sendMessage, isConnected, connectionError } = useWebSocket();
 
   const yDoc = useRef(new Y.Doc());
   const provider = useRef(null);
@@ -167,6 +171,47 @@ const TeamNote = () => {
     const yTitle = yDoc.current.getMap("title");
     yTitle.set("currentTitle", title);
   };
+
+  useEffect(() => {
+    if (sendMessage) {
+      const payload = {
+        action: 'addParticipant',
+        team_id: team_id, 
+        kind: 'note',
+        participant: peerId, 
+      };
+      console.log('Adding participant:', payload);
+      sendMessage(JSON.stringify(payload));
+
+      return () => {
+        const payload = {
+          action: 'removeParticipant',
+          team_id: team_id, 
+          kind: 'note',
+          participant: peerId, 
+        };
+        console.log('Removing participant:', payload);
+        sendMessage(JSON.stringify(payload));
+      };
+    }
+  }, [sendMessage, team_id, peerId]);
+
+  // 하트비트 구현 (30초마다 서버에 신호 전송)
+  useEffect(() => {
+    let heartbeatInterval;
+
+    if (isConnected) {
+      heartbeatInterval = setInterval(() => {
+        const heartbeatPayload = { action: 'heartbeat' };
+        console.log('Sending heartbeat:', heartbeatPayload);
+        sendMessage(JSON.stringify(heartbeatPayload));
+      }, 30000); // 30초마다
+    }
+
+    return () => {
+      if (heartbeatInterval) clearInterval(heartbeatInterval);
+    };
+  }, [isConnected, sendMessage]);
 
   return (
     <div className={`team-note ${isSidebarOpen ? "sidebar-open" : ""}`}>

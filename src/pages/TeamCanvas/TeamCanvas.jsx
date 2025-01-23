@@ -1,3 +1,4 @@
+// TeamCanvas.js
 import React, { useRef, useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import CanvasToolbar from '../../components/canvas/CanvasToolbar';
@@ -12,8 +13,12 @@ import * as Y from 'yjs';
 import { WebrtcProvider } from 'y-webrtc';
 import { Awareness } from 'y-protocols/awareness';
 
+import { useWebSocket } from '../../context/WebSocketContext';
+import { v4 as uuidv4 } from 'uuid';
+
 const TeamCanvas = () => {
   const { teamId } = useParams();
+  const peerId = useRef(uuidv4()).current; // peerId를 useRef로 안정적으로 유지
   const [tool, setTool] = useState('pencil');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const canvasAreaRef = useRef(null);
@@ -21,6 +26,7 @@ const TeamCanvas = () => {
   const [tabs, setTabs] = useState([]);
   const [activeTab, setActiveTab] = useState(0);
   const [image, setImage] = useState(null);
+  const { sendMessage, isConnected, connectionError } = useWebSocket();
 
   const yDoc = useRef(new Y.Doc());
   const provider = useRef(null);
@@ -47,8 +53,7 @@ const TeamCanvas = () => {
       ],
     });
 
-
-    // 랜덤 사용자 정보 생성
+    // 사용자 정보 설정
     const user = {
       name: `User ${Math.floor(Math.random() * 100)}`,
       color: "#" + ((1 << 24) * Math.random() | 0).toString(16),
@@ -82,7 +87,7 @@ const TeamCanvas = () => {
       }
       yDoc.current.destroy();
     };
-  }, [teamId]);  
+  }, [teamId]);
 
   const handleTabClick = async (index) => {
     setActiveTab(index);
@@ -109,7 +114,7 @@ const TeamCanvas = () => {
             };
           });
         }
-          return shape;
+        return shape;
       }));
       console.log('Processed shapes:', processedShapes);
       yShapes.delete(0, yShapes.length);
@@ -174,10 +179,52 @@ const TeamCanvas = () => {
   const handleImageUpload = (imageData) => {
     console.log('Uploaded image data:', imageData);
     setImage(imageData);
-  };  
+  };
+
+  useEffect(() => {
+    if (isConnected) {
+      const payload = {
+        action: 'addParticipant',
+        team_id: teamId, 
+        kind: 'canvas',
+        participant: peerId, 
+      };
+      console.log('Adding participant:', payload);
+      sendMessage(JSON.stringify(payload));
+    }
+
+    return () => {
+      if (isConnected) {
+        const payload = {
+          action: 'removeParticipant',
+          team_id: teamId, 
+          kind: 'canvas',
+          participant: peerId, 
+        };
+        console.log('Removing participant:', payload);
+        sendMessage(JSON.stringify(payload));
+      }
+    };
+  }, [sendMessage, isConnected, teamId, peerId]);
+
+  // 하트비트 구현 (30초마다 서버에 신호 전송)
+  useEffect(() => {
+    let heartbeatInterval;
+
+    if (isConnected) {
+      heartbeatInterval = setInterval(() => {
+        sendMessage(JSON.stringify({ action: 'heartbeat' }));
+      }, 30000); // 30초마다
+    }
+
+    return () => {
+      if (heartbeatInterval) clearInterval(heartbeatInterval);
+    };
+  }, [isConnected, sendMessage]);
 
   return (
     <div className={`TeamCanvas ${isSidebarOpen ? 'sidebar-open' : ''}`}>
+      {connectionError && <div className="error">{connectionError}</div>}
       <NoteHeader onBack={() => {}} onShare={() => {}} onChat={() => {}} onMenu={handleMenuClick} onSave={handleSave} />
       <CanvasTabs 
         tabs={tabs} 
