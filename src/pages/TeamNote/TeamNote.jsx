@@ -4,7 +4,7 @@ import { useRecoilState } from "recoil";
 import Tiptap from "../../components/tiptap/Tiptap";
 import NoteHeader from "../../components/common/NoteHeader";
 import Sidebar from "../../components/common/Sidebar";
-import { saveNote, getNotesByTeamID, updateNoteTitle, getNoteByTeamIDAndTitle } from "../../service/NoteService";
+import { saveNote, getNotesByTeamID, updateNoteTitle, getNoteByID } from "../../service/NoteService";
 import { noteState } from "../../recoil/noteWebrtcAtoms";
 import TitleButtons from "../../components/tiptap/TitleButtons";
 import TitleInput from "../../components/tiptap/TitleInput";
@@ -73,6 +73,7 @@ const TeamNote = () => {
       yTitle.observe(event => {
         console.log("Title changed:", event);
         const newTitle = yTitle.get("currentTitle");
+        console.log("New title:", newTitle);
         if (newTitle !== currentTitle) {
           setCurrentTitle(newTitle);
         }
@@ -91,7 +92,7 @@ const TeamNote = () => {
     const fetchTitles = async () => {
       try {
         const notes = await getNotesByTeamID(team_id);
-        setTitles(notes.map(note => note.title ?? 'Untitled'));
+        setTitles(notes.map(note => ({ id: note.id, title: note.title ?? 'Untitled' })));
       } catch (error) {
         console.error("Error fetching titles:", error);
       }
@@ -104,13 +105,14 @@ const TeamNote = () => {
     setIsSidebarOpen(!isSidebarOpen);
   };
 
-  const handleTitleClick = async (title) => {
+  const handleTitleClick = async (id) => {
     try {
-      const noteData = await getNoteByTeamIDAndTitle(team_id, title);
+      const noteData = await getNoteByID(id);
       if (noteData && noteData.note) {
         const parsedNote = JSON.parse(noteData.note);
-        setNote(parsedNote);
-        handleTitleChange(title);
+        setNote(noteData);
+        handleTitleChange(noteData.title);
+        console.log(note.id);
         tiptapRef.current?.handleGetNote(parsedNote);
 
       } else {
@@ -137,6 +139,7 @@ const TeamNote = () => {
   const handleSave = async (pmJson) => {
     try {
       const noteToSave = {
+        id: note?.id || '',
         team_id: team_id,
         note: JSON.stringify(pmJson),
         title: currentTitle,
@@ -149,12 +152,12 @@ const TeamNote = () => {
     }
   };
 
-  const handleUpdateTitle = async (oldTitle, newTitle) => {
+  const handleUpdateTitle = async (id, newTitle) => {
     try {
-      await updateNoteTitle(team_id, oldTitle, newTitle);
-      const updatedTitles = titles.map(title => (title === oldTitle ? newTitle : title));
+      await updateNoteTitle(id, newTitle);
+      const updatedTitles = titles.map(title => (title.id === id ? { ...title, title: newTitle } : title));
       setTitles(updatedTitles);
-      console.log("Title updated:", oldTitle, "=>", newTitle);
+      console.log("Title updated:", id, "=>", newTitle);
     } catch (error) {
       console.error("Error updating title:", error);
     }
@@ -176,7 +179,7 @@ const TeamNote = () => {
         onSave={() => tiptapRef.current?.handleSave()}
       />
 
-      <main>
+      <main className="container">
         <TitleButtons titles={titles} onTitleClick={handleTitleClick} onUpdateTitle={handleUpdateTitle} />
         <TitleInput title={currentTitle} onTitleChange={handleTitleChange} />
         {provider.current && awareness.current ? (
