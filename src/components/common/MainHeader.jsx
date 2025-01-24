@@ -1,10 +1,24 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { AiOutlineMenu } from 'react-icons/ai';
 import Sidebar from './Sidebar';
 import './MainHeader.css';
 
-const MainHeader = ({ onBack, logoSrc }) => {
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+// 버튼
+import LoginButton from '../auth/LoginButton';
+import ProfileButton from '../auth/ProfileButton';
+
+const MainHeader = ({
+  onBack,
+  logoSrc,
+  // App에서 내려온 props
+  isLogin,
+  nickname,
+  openLoginModal,
+  openLogoutModal,
+  openAccountDeleteModal,
+  openNicknameModal,
+}) => {
+  const [isSidebarOpen, setIsSidebarOpen] = React.useState(false);
 
   const handleMenuClick = () => {
     setIsSidebarOpen(!isSidebarOpen);
@@ -13,10 +27,12 @@ const MainHeader = ({ onBack, logoSrc }) => {
   return (
     <div className={`main-container ${isSidebarOpen ? 'sidebar-open' : ''}`}>
       <div className="header flex items-center justify-between px-4 py-2 bg-white border-b border-gray-300">
-        {/* 뒤로가기 버튼과 이미지 그룹 */}
+        {/* 왼쪽 */}
         <div className="flex items-center gap-2">
           <button
-            className="flex items-center justify-center w-8 h-8 rounded-md border border-gray-300 bg-gray-100 text-gray-600 hover:text-gray-900 hover:bg-gray-200"
+            className="flex items-center justify-center w-8 h-8 rounded-md border 
+                       border-gray-300 bg-gray-100 text-gray-600 
+                       hover:text-gray-900 hover:bg-gray-200"
             onClick={handleMenuClick}
           >
             <AiOutlineMenu size={18} />
@@ -28,13 +44,21 @@ const MainHeader = ({ onBack, logoSrc }) => {
           />
         </div>
 
-        {/* 우측 프로필 및 버튼 그룹 */}
+        {/* 오른쪽 */}
         <div className="flex items-center gap-2">
-          {/* 추가 버튼이나 프로필 아이콘 등을 여기에 추가할 수 있습니다 */}
+          {isLogin ? (
+            <ProfileButton
+              nickname={nickname}
+              onOpenNicknameModal={openNicknameModal}
+              onOpenAccountDeleteModal={openAccountDeleteModal}
+              onOpenLogoutConfirm={openLogoutModal}
+            />
+          ) : (
+            <LoginButton onClick={openLoginModal} />
+          )}
         </div>
       </div>
 
-      {/* 사이드바 */}
       <Sidebar isOpen={isSidebarOpen} onClose={handleMenuClick} />
     </div>
   );
