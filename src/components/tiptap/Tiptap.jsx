@@ -17,8 +17,15 @@ import Image from "@tiptap/extension-image";
 import BulletList from "@tiptap/extension-bullet-list";
 import OrderedList from "@tiptap/extension-ordered-list";
 import ListItem from "@tiptap/extension-list-item";
+import Highlight from '@tiptap/extension-highlight'
+import Typography from '@tiptap/extension-typography'
+import Details from '@tiptap-pro/extension-details'
+import DetailsContent from '@tiptap-pro/extension-details-content'
+import DetailsSummary from '@tiptap-pro/extension-details-summary'
+import Placeholder from '@tiptap/extension-placeholder'
 import { all, createLowlight } from "lowlight";
 import CollaborationCursor from '@tiptap/extension-collaboration-cursor'
+import { uploadNoteImage } from "../../service/ImageService";
 import {
   MarkdownSerializer,
   defaultMarkdownSerializer,
@@ -46,8 +53,8 @@ const Tiptap = forwardRef((props, ref) => {
   const [dropdownVisible, setDropdownVisible] = useState(false);
   const [commandList, setCommandList] = useState([]);
   const [dropdownPosition, setDropdownPosition] = useState({ x: 0, y: 0 });
-
   const [markdown, setMarkdown] = useState("");
+  const fileInputRef = useRef(null);
 
   const yXmlFragment = useRef(yDoc.getXmlFragment('prosemirror'));
 
@@ -61,12 +68,39 @@ const Tiptap = forwardRef((props, ref) => {
         bulletList: false,
         listItem: false,
       }),
+      // CollaborationCursor.configure({
+      //   provider,
+      //   user: {
+      //     name: 'Cyndi Lauper',
+      //     color: '#f783ac',
+      //   },
+      // }),
       CodeBlockLowlight.configure({ lowlight }),
       Table.configure({
         resizable: true,
         cellMinWidth: 50,
         cellMinHeight: 20,
       }),
+      Details.configure({
+        persist: true,
+        HTMLAttributes: {
+          class: 'details',
+        },
+      }),
+      DetailsSummary,
+      DetailsContent,
+      Placeholder.configure({
+        includeChildren: true,
+        placeholder: ({ node }) => {
+          if (node.type.name === 'detailsSummary') {
+            return 'Summary'
+          }
+
+          return null
+        },
+      }),
+      Highlight,
+      Typography,
       TableRow,
       TableCell,
       TableHeader,
@@ -77,6 +111,7 @@ const Tiptap = forwardRef((props, ref) => {
     ],
     content: '',
     onUpdate: ({ editor }) => {
+      setDropdownVisible(false)
       // (옵션) Markdown 직렬화
       const serializer = new MarkdownSerializer(
         extendedMarkdownSerializerNodes,
@@ -84,7 +119,22 @@ const Tiptap = forwardRef((props, ref) => {
       );
       const markdownContent = serializer.serialize(editor.state.doc);
       setMarkdown(markdownContent);
-    },
+
+      const { doc, selection } = editor.state;
+      const { from } = selection;
+    
+      if (from > 1) {
+        const lastChar = doc.textBetween(from - 1, from, " ");
+        if (lastChar === "/") {
+          console.log("Detected slash '/'");
+          setDropdownVisible(true);
+
+          const coords = editor.view.coordsAtPos(from);
+          setDropdownPosition({ x: coords.left, y: coords.bottom });
+          setCommandList(slashCommands);
+        }
+      }
+      },
   });
 
   // ProseMirror Markdown Serializer 확장
@@ -133,6 +183,23 @@ const Tiptap = forwardRef((props, ref) => {
     hardBreak(state, node) {
       state.write("  \n");
     },
+    details: (state, node) => {
+      state.write('<details');
+      if (node.attrs.open) {
+        state.write(' open');
+      }
+      state.write('>');
+      state.renderContent(node);
+      state.write('</details>');
+    },
+    detailsSummary: (state, node) => {
+      state.write('<summary>');
+      state.renderContent(node);
+      state.write('</summary>');
+    },
+    detailsContent: (state, node) => {
+      state.renderContent(node);
+    },
   };
 
   const extendedMarkdownSerializerMarks = {
@@ -151,8 +218,7 @@ const Tiptap = forwardRef((props, ref) => {
     },
   };
 
-  // slash 명령어
-  const commands = [
+  const slashCommands = [
     {
       label: "table",
       action: (editor) =>
@@ -160,24 +226,36 @@ const Tiptap = forwardRef((props, ref) => {
     },
     {
       label: "image",
-      action: (editor) => {
-        const imageUrl = prompt("이미지 URL을 입력하세요:");
-        if (imageUrl) {
-          editor.chain().focus().setImage({ src: imageUrl }).run();
-        }
+      action: () => {
+        fileInputRef.current.click();
       },
     },
     {
       label: "code block",
       action: (editor) => editor.chain().focus().toggleCodeBlock().run(),
     },
+    {
+      label: "Set details",
+      action: (editor) => editor.chain().focus().setDetails().run(),
+    },
   ];
-
   // slash 명령 실행
   const handleCommandClick = (command) => {
     if (!editor) return;
     command.action(editor);
     setDropdownVisible(false);
+  };
+  
+  const handleFileChange = async (event) => {
+    const file = event.target.files[0];
+    if (file) {
+      try {
+        const imageUrl = await uploadNoteImage(file, initialJson.id); 
+        editor.chain().focus().setImage({ src: imageUrl }).run();
+      } catch (error) {
+        console.error('Error uploading file:', error);
+      }
+    }
   };
 
   useImperativeHandle(ref, () => ({
@@ -212,7 +290,7 @@ const Tiptap = forwardRef((props, ref) => {
               <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 9h16.5m-16.5 6.75h16.5" />
           </svg>
         </DragHandle>
-        <EditorContent editor={editor} style={{ width: "100%", height: "100%" }} />
+        <EditorContent editor={editor} />
 
         {dropdownVisible && (
           <DropdownCard
@@ -221,6 +299,12 @@ const Tiptap = forwardRef((props, ref) => {
             onCommandClick={handleCommandClick}
           />
         )}
+        <input
+          type="file"
+          ref={fileInputRef}
+          style={{ display: 'none' }}
+          onChange={handleFileChange}
+        />
       </div>
     </div>
   );

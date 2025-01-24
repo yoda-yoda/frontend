@@ -3,6 +3,7 @@ import "./TitleInput.css";
 
 const TitleInput = ({ title, onTitleChange }) => {
   const handleChange = (e) => {
+    console.log(title);
     onTitleChange(e.target.value);
   };
 

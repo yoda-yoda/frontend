@@ -3,8 +3,10 @@ import { useRecoilState, useRecoilValue } from 'recoil';
 import { Stage, Layer, Line, Rect, Circle, Text, Image, Transformer } from 'react-konva';
 import { toolState, colorState } from '../../recoil/canvasToolAtoms';
 import { createCanvas, getCanvasByTeamID } from '../../service/CanvasService';
+import { uploadImage } from '../../service/ImageService';
+import useImage from 'use-image';
 
-const CanvasArea = forwardRef(({ teamId, yDoc, provider, awareness, canvasSize, onZoom, canvasId, title }, ref) => {
+const CanvasArea = forwardRef(({ teamId, yDoc, provider, awareness, canvasSize, onZoom, canvasId, title, image }, ref) => {
   const [tool, setTool] = useRecoilState(toolState);
   const color = useRecoilValue(colorState);
   const stageRef = useRef(null);
@@ -20,13 +22,35 @@ const CanvasArea = forwardRef(({ teamId, yDoc, provider, awareness, canvasSize, 
   const transformerRef = useRef(null);
   const [scale, setScale] = useState(1);
   const [position, setPosition] = useState({ x: 0, y: 0 });
+  const [cursors, setCursors] = useState({});
+  const [loadedImage] = useImage(image);
 
   useEffect(() => {
     const yShapes = yDoc.getArray('shapes');
 
-    const updateKonvaShapes = () => {
+    const updateKonvaShapes = async () => {
       const newShapes = yShapes.toArray();
-      setShapes(newShapes);
+
+      const processedShapes = await Promise.all(
+        newShapes.map(async (shape) => {
+          if (shape.tool === 'image' && shape.imageUrl) {
+            return new Promise((resolve) => {
+              const img = new window.Image();
+              img.src = shape.imageUrl;
+              img.onload = () => {
+                resolve({ ...shape, image: img });
+              };
+              img.onerror = () => {
+                console.error('Failed to load image:', shape.imageUrl);
+                resolve(shape);
+              };
+            });
+          }
+          return shape;
+        })
+      );
+
+      setShapes(processedShapes);
     };
 
     yShapes.observe(updateKonvaShapes);
@@ -37,6 +61,28 @@ const CanvasArea = forwardRef(({ teamId, yDoc, provider, awareness, canvasSize, 
     };
   }, [yDoc]);
 
+  useEffect(() => {
+    const handleAwarenessUpdate = () => {
+      const states = awareness.getStates();
+      const newCursors = {};
+      states.forEach((state, clientId) => {
+        if (state.cursor) {
+          newCursors[clientId] = state.cursor;
+        }
+      });
+      setCursors(newCursors);
+    };
+
+    awareness.on('change', handleAwarenessUpdate);
+
+    return () => {
+      awareness.off('change', handleAwarenessUpdate);
+    };
+  }, [awareness]);
+
+  const updateCursor = (x, y) => {
+    awareness.setLocalStateField('cursor', { x, y });
+  };
 
   useImperativeHandle(ref, () => ({
     saveCanvas: async () => {
@@ -134,38 +180,96 @@ const handleMouseDown = (e) => {
     setCurrentShape({ tool, x: pos.x, y: pos.y, width: 0, height: 0, color });
   } else if (tool === 'text') {
     setCurrentShape({ tool, x: pos.x, y: pos.y, text: 'Sample Text', color });
+  } else if (tool === 'image' && loadedImage) {
+    setCurrentShape({
+      tool: 'image',
+      x: pos.x,
+      y: pos.y,
+      width: 0, 
+      height: 0, 
+      image: loadedImage, 
+    });
   }
 };
 
-const handleMouseMove = (e) => {
-  if (!isDrawing || !tool) return;
-  const stage = e.target.getStage();
-  const pointer = stage.getPointerPosition();
-  const pos = {
-    x: (pointer.x - position.x) / scale,
-    y: (pointer.y - position.y) / scale,
+  const handleMouseMove = (e) => {
+    const stage = e.target.getStage();
+    const pointer = stage.getPointerPosition();
+    const pos = {
+      x: (pointer.x - position.x) / scale,
+      y: (pointer.y - position.y) / scale,
+    };
+
+    updateCursor(pos.x, pos.y);
+
+    if (!isDrawing || !tool) return;
+
+    if (tool === 'pencil' || tool === 'pen') {
+      const newPoints = currentShape.points.concat([pos.x, pos.y]);
+      setCurrentShape({ ...currentShape, points: newPoints });
+    } else if (tool === 'square') {
+      const newWidth = pos.x - currentShape.x;
+      const newHeight = pos.y - currentShape.y;
+      setCurrentShape({ ...currentShape, width: newWidth, height: newHeight });
+    } else if (tool === 'circle') {
+      const radius = Math.sqrt(Math.pow(pos.x - currentShape.x, 2) + Math.pow(pos.y - currentShape.y, 2));
+      setCurrentShape({ ...currentShape, radius });
+    } else if (tool === 'image') {
+      const newWidth = pos.x - currentShape.x;
+      const newHeight = pos.y - currentShape.y;
+      setCurrentShape({ ...currentShape, width: newWidth, height: newHeight });
+    }
   };
 
-  if (tool === 'pencil' || tool === 'pen') {
-    const newPoints = currentShape.points.concat([pos.x, pos.y]);
-    setCurrentShape({ ...currentShape, points: newPoints });
-  } else if (tool === 'square') {
-    const newWidth = pos.x - currentShape.x;
-    const newHeight = pos.y - currentShape.y;
-    setCurrentShape({ ...currentShape, width: newWidth, height: newHeight });
-  } else if (tool === 'circle') {
-    const radius = Math.sqrt(Math.pow(pos.x - currentShape.x, 2) + Math.pow(pos.y - currentShape.y, 2));
-    setCurrentShape({ ...currentShape, radius });
-  }
-};
-
-  const handleMouseUp = () => {
+  const handleMouseUp = async () => {
     if (!tool || tool.tool === 'mouse' || tool.tool === 'eraser') return;
     setIsDrawing(false);
     const newShape = { ...currentShape, id: `shape-${Date.now()}` };
-    setShapes([...shapes, currentShape]);
-    const yShapes = yDoc.getArray('shapes');
-    yShapes.push([newShape]);
+
+    if (currentShape && currentShape.tool === 'image') {
+      try {
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.abs(currentShape.width);
+        canvas.height = Math.abs(currentShape.height);
+        const context = canvas.getContext('2d');
+        context.drawImage(
+          currentShape.image,
+          0,
+          0,
+          Math.abs(currentShape.width),
+          Math.abs(currentShape.height)
+        );
+
+        const imageBlob = await new Promise((resolve) => canvas.toBlob(resolve));
+        const file = new File([imageBlob], `image-${Date.now()}.png`, { type: 'image/png' });
+
+        const uploadedImageUrl = await uploadImage(file, canvasId);
+
+        const newImage = new window.Image();
+        newImage.src = uploadedImageUrl;
+
+        newImage.onload = () => {
+          const newShape = {
+            ...currentShape,
+            id: `shape-${Date.now()}`,
+            image: undefined,
+            imageUrl: uploadedImageUrl,
+          };
+          setShapes([...shapes, newShape]);
+          const yShapes = yDoc.getArray('shapes');
+          yShapes.push([newShape]);
+          setCurrentShape(null);
+          console.log(shapes)
+        };
+  
+      } catch (error) {
+        console.error('Error uploading image:', error);
+      }
+    } else {
+      setShapes([...shapes, newShape]);
+      const yShapes = yDoc.getArray('shapes');
+      yShapes.push([newShape]);
+    }
     setCurrentShape(null);
   };
 
@@ -182,6 +286,7 @@ const handleMouseMove = (e) => {
   };
 
   const handleTextEditBlur = () => {
+    console.log('Text edit blur', textEditIndex);
     const updatedShapes = shapes.map((shape, index) => {
       if (index === textEditIndex) {
         return { ...shape, text: textEditValue };
@@ -252,6 +357,12 @@ const handleMouseMove = (e) => {
       console.error('Error saving canvas:', error);
     }
   };
+
+const handleTextEditKeyDown = (e) => {
+  if (e.key === 'Enter') {
+    handleTextEditBlur(); // 엔터로 수정 반영
+  }
+};
 
   return (
     <>
@@ -341,9 +452,9 @@ const handleMouseMove = (e) => {
                   id={`shape-${index}`}
                   x={shape.x}
                   y={shape.y}
-                  image={shape.image}
-                  width={shape.width}
-                  height={shape.height}
+                  image={shape.image || loadedImage}
+                  width={Math.abs(shape.width)}
+                  height={Math.abs(shape.height)}
                   onClick={() => handleShapeClick(index)}
                   draggable
                   onDragEnd={(e) => handleDragEnd(e, index)}
@@ -368,6 +479,19 @@ const handleMouseMove = (e) => {
           {currentShape && currentShape.tool === 'image' && (
             <Image x={currentShape.x} y={currentShape.y} image={currentShape.image} width={currentShape.width} height={currentShape.height} />
           )}
+          {Object.keys(cursors).map((clientId) => {
+            const cursor = cursors[clientId];
+            return (
+              <Circle
+                key={clientId}
+                x={cursor.x}
+                y={cursor.y}
+                radius={5}
+                fill="red"
+                listening={false} // 이벤트를 받지 않도록 설정
+              />
+            );
+          })}
           <Transformer ref={transformerRef} />
         </Layer>
       </Stage>
@@ -385,6 +509,7 @@ const handleMouseMove = (e) => {
           value={textEditValue}
           onChange={handleTextEditChange}
           onBlur={handleTextEditBlur}
+          onKeyDown={handleTextEditKeyDown}
           autoFocus
         />
       )}

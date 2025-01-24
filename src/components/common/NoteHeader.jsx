@@ -57,8 +57,8 @@ const NoteHeader = ({
         <div className="flex -space-x-3">
           {participants.map((participant, index) => (
             <img
-              key={index}
-              src={participant.profilePicture}
+              key={participant.id}
+              src={participant.profilePicture || "https://i.namu.wiki/i/qEQTv7w9d-OZ6l9g5pF87sgGMaXwjFaLecd_VeZef-L9jNn86zKPX8CwIhkyPKo4dAp-7f83ZT25fpJr-UeFk0bGyroMp0to_XgnsLD5UZLKDBnqlMuKsUtVctbNLGWYNAtWdJGs7gfN8SLMOnNeuw.webp"}
               alt={participant.name}
               className="w-8 h-8 rounded-full border border-gray-300"
               style={{

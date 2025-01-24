@@ -15,21 +15,22 @@ const TitleButtons = ({ titles, onTitleClick, onUpdateTitle }) => {
 
   const closeModal = () => {
     setModalIsOpen(false);
+    setNewTitle('');
   };
 
   const handleUpdateTitle = () => {
-    onUpdateTitle(selectedTitle, newTitle);
+    onUpdateTitle(selectedTitle.id, newTitle);
     closeModal();
   };
 
   return (
     <div className="title-buttons-container">
-      {titles.map(title => (
+      {titles.map(({ id, title }) => (
         <button
-          key={title}
+          key={id}
           className="title-button"
-          onClick={() => onTitleClick(title)}
-          onDoubleClick={() => openModal(title)}
+          onClick={() => onTitleClick(id)}
+          onDoubleClick={() => openModal({ id, title })}
         >
           {title}
         </button>

@@ -66,5 +66,5 @@ class WebSocketService {
   }
 }
 
-const webSocketService = new WebSocketService('ws://localhost:4000/webrtc');
+const webSocketService = new WebSocketService('ws://localhost:8082/go/webrtc');
 export default webSocketService;

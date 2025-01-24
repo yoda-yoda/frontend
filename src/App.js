@@ -6,6 +6,7 @@ import axios from 'axios';
 import TeamNote from './pages/TeamNote/TeamNote';
 import TeamCanvas from './pages/TeamCanvas/TeamCanvas';
 import Main from './pages/Main';
+import { WebSocketProvider } from './context/WebSocketContext';
 
 import LoginModal from './components/auth/LoginModal';
 import LogoutConfirmModal from './components/auth/LogoutConfirmModal';
@@ -75,6 +76,7 @@ function App() {
   };
 
   return (
+  <WebSocketProvider>
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<Main {...sharedProps} />} />
@@ -104,6 +106,8 @@ function App() {
         onNicknameUpdate={handleNicknameUpdate}
       />
     </BrowserRouter>
+  </WebSocketProvider>
+
   );
 }
 
