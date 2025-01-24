@@ -43,6 +43,7 @@
     "axios": "^1.7.9",
     "cra-template": "1.2.0",
     "highlight.js": "^11.11.1",
+    "js-cookie": "^3.0.5",
     "konva": "^8.4.3",
     "lowlight": "^3.3.0",
     "markdown-it": "^14.1.0",
@@ -57,13 +58,18 @@
     "react-router-dom": "^7.1.1",
     "react-scripts": "^5.0.1",
     "recoil": "^0.7.7",
+    "semantic-ui-css": "^2.5.0",
+    "semantic-ui-react": "^2.1.5",
+
     "use-image": "^1.1.1",
+
     "uuid": "^11.0.5",
     "y-prosemirror": "^1.2.15",
     "y-protocols": "^1.0.6",
     "y-webrtc": "^10.3.0",
     "yjs": "^13.6.23"
   },
+  "proxy": "http://localhost:8080",
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build",

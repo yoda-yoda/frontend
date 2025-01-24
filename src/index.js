@@ -4,6 +4,7 @@ import { RecoilRoot } from 'recoil';
 import './index.css';
 import Modal from 'react-modal';
 import App from './App';
+import 'semantic-ui-css/semantic.min.css';
 
 Modal.setAppElement('#root');
 
