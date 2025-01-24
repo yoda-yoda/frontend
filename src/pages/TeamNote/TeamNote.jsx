@@ -45,7 +45,7 @@ const TeamNote = () => {
     }
 
     provider.current = new WebrtcProvider(roomName, yDoc.current, {
-      signaling: [`ws://localhost:4444`],
+      signaling: [`ws://localhost:8082/signaling`],
       awareness: awareness.current,
       iceServers: [
         { urls: "stun:stun.l.google.com:19302" },
