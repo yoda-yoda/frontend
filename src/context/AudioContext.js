@@ -35,17 +35,6 @@ function useAudioChat() {
     gainNodes.set(participant.id, gainNode);
   };
 
-    // 참여자 제거
-  const removeParticipant = (participantId) => {
-    setParticipants((prev) => prev.filter(p => p.id !== participantId));
-
-    // GainNode 제거
-    gainNodes.delete(participantId);
-
-    // 웹소켓을 통해 서버에 참여자 제거 알림
-
-  };
-
   // 볼륨 조절
   const setParticipantVolume = (participantId, volume) => {
     const gainNode = gainNodes.get(participantId);
@@ -65,7 +54,6 @@ function useAudioChat() {
     participants,
     toggleMute,
     addParticipant,
-    removeParticipant,
     updateConnectionState,
     setParticipantVolume,
   };

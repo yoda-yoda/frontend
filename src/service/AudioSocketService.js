@@ -79,5 +79,5 @@ class AudioSocketService {
   }
 }
 
-const audioSocketService = new AudioSocketService("ws://localhost:4000/webrtc/audio");
+const audioSocketService = new AudioSocketService("ws://localhost:8082/go/webrtc/audio");
 export default audioSocketService;
