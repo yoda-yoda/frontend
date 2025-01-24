@@ -24,7 +24,6 @@ import DetailsContent from '@tiptap-pro/extension-details-content'
 import DetailsSummary from '@tiptap-pro/extension-details-summary'
 import Placeholder from '@tiptap/extension-placeholder'
 import { all, createLowlight } from "lowlight";
-import HoverableTable from "./extension/HoverableTable";
 import CollaborationCursor from '@tiptap/extension-collaboration-cursor'
 import { uploadNoteImage } from "../../service/ImageService";
 import {
@@ -109,7 +108,6 @@ const Tiptap = forwardRef((props, ref) => {
       BulletList,
       OrderedList,
       ListItem,
-      HoverableTable,
     ],
     content: '',
     onUpdate: ({ editor }) => {

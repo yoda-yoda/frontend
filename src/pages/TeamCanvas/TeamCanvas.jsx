@@ -1,4 +1,5 @@
-import React, { useRef, useState, useEffect } from 'react';
+// TeamCanvas.js
+import React, { useRef, useState, useEffect, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
 import CanvasToolbar from '../../components/canvas/CanvasToolbar';
 import './TeamCanvas.css';
@@ -12,8 +13,12 @@ import * as Y from 'yjs';
 import { WebrtcProvider } from 'y-webrtc';
 import { Awareness } from 'y-protocols/awareness';
 
+import { useWebSocket } from '../../context/WebSocketContext';
+import { v4 as uuidv4 } from 'uuid';
+
 const TeamCanvas = () => {
   const { teamId } = useParams();
+  const peerId = useRef(uuidv4()).current; // peerId를 useRef로 안정적으로 유지
   const [tool, setTool] = useState('pencil');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const canvasAreaRef = useRef(null);
@@ -21,6 +26,10 @@ const TeamCanvas = () => {
   const [tabs, setTabs] = useState([]);
   const [activeTab, setActiveTab] = useState(0);
   const [image, setImage] = useState(null);
+  
+  const { sendMessage, isConnected, connectionError, addMessageListener } = useWebSocket();
+
+  const [participants, setParticipants] = useState([]); // 컴포넌트 상태로 참여자 관리
 
   const yDoc = useRef(new Y.Doc());
   const provider = useRef(null);
@@ -47,8 +56,7 @@ const TeamCanvas = () => {
       ],
     });
 
-
-    // 랜덤 사용자 정보 생성
+    // 사용자 정보 설정
     const user = {
       name: `User ${Math.floor(Math.random() * 100)}`,
       color: "#" + ((1 << 24) * Math.random() | 0).toString(16),
@@ -82,7 +90,61 @@ const TeamCanvas = () => {
       }
       yDoc.current.destroy();
     };
-  }, [teamId]);  
+  }, [teamId]);
+
+  useEffect(() => {
+    const fetchTitles = async () => {
+      try {
+        const canvases = await getCanvasByTeamID(teamId);
+        const tabsData = canvases.map(canvas => ({
+          id: canvas.id,
+          title: canvas.title ?? 'Untitled',
+          shapes: JSON.parse(canvas.canvas || '[]')
+        }));
+        setTabs(tabsData);
+      } catch (error) {
+        console.error("Error fetching canvas data:", error);
+      }
+    };
+
+    fetchTitles();
+  }, [teamId]);
+
+  // WebSocket 메시지 처리
+  const handleMessage = useCallback((message) => {
+    console.log('handleMessage called with:', message);
+    if (message.action === 'updateParticipants') {
+      if (Array.isArray(message.participants)) {
+        console.log('Updating participants:', message.participants);
+        setParticipants(message.participants);
+      } else {
+        console.error("Invalid participants data:", message.participants);
+      }
+    }
+  }, [teamId]);
+
+  useEffect(() => {
+    // 메시지 리스너 등록
+    const unsubscribe = addMessageListener(handleMessage);
+    console.log('Listener registered for Team:', teamId);
+
+    // 초기 참여자 목록 요청
+    if (sendMessage) {
+      const payload = {
+        action: 'getParticipants',
+        team_id: teamId,
+        kind: 'canvas',
+      };
+      console.log('Sending getParticipants:', payload);
+      sendMessage(JSON.stringify(payload));
+    }
+
+    return () => {
+      // 컴포넌트 언마운트 시 리스너 해제
+      if (unsubscribe) unsubscribe();
+      console.log('Listener unregistered for Team:', teamId);
+    };
+  }, [addMessageListener, teamId, sendMessage, handleMessage]);
 
   const handleTabClick = async (index) => {
     setActiveTab(index);
@@ -102,14 +164,14 @@ const TeamCanvas = () => {
       const processedShapes = await Promise.all(shapes.map(async shape => {
         if (shape.tool === 'image' && shape.imageUrl) {
           return new Promise(resolve => {
-            const image = new window.Image();
-            image.src = shape.imageUrl;
-            image.onload = () => {
-              resolve({ ...shape, image });
+            const img = new window.Image();
+            img.src = shape.imageUrl;
+            img.onload = () => {
+              resolve({ ...shape, image: img });
             };
           });
         }
-          return shape;
+        return shape;
       }));
       console.log('Processed shapes:', processedShapes);
       yShapes.delete(0, yShapes.length);
@@ -174,11 +236,65 @@ const TeamCanvas = () => {
   const handleImageUpload = (imageData) => {
     console.log('Uploaded image data:', imageData);
     setImage(imageData);
-  };  
+  };
+
+  useEffect(() => {
+    if (isConnected) {
+      const payload = {
+        action: 'addParticipant',
+        team_id: teamId, 
+        kind: 'canvas',
+        participant: peerId, 
+        name: 'Your Name', // 실제 사용자 이름으로 변경
+        profilePicture: 'https://i.namu.wiki/i/qEQTv7w9d-OZ6l9g5pF87sgGMaXwjFaLecd_VeZef-L9jNn86zKPX8CwIhkyPKo4dAp-7f83ZT25fpJr-UeFk0bGyroMp0to_XgnsLD5UZLKDBnqlMuKsUtVctbNLGWYNAtWdJGs7gfN8SLMOnNeuw.webp', // 실제 프로필 사진 URL로 변경
+        color: '#FF0000', // 원하는 색상으로 변경
+      };
+      console.log('Adding participant:', payload);
+      sendMessage(JSON.stringify(payload));
+    }
+
+    return () => {
+      if (isConnected) {
+        const payload = {
+          action: 'removeParticipant',
+          team_id: teamId, 
+          kind: 'canvas',
+          participant: peerId, 
+        };
+        console.log('Removing participant:', payload);
+        sendMessage(JSON.stringify(payload));
+      }
+    };
+  }, [sendMessage, isConnected, teamId, peerId]);
+
+  // 하트비트 구현 (30초마다 서버에 신호 전송)
+  useEffect(() => {
+    let heartbeatInterval;
+
+    if (isConnected) {
+      heartbeatInterval = setInterval(() => {
+        const heartbeatPayload = { action: 'heartbeat' };
+        console.log('Sending heartbeat:', heartbeatPayload);
+        sendMessage(JSON.stringify(heartbeatPayload));
+      }, 30000); // 30초마다
+    }
+
+    return () => {
+      if (heartbeatInterval) clearInterval(heartbeatInterval);
+    };
+  }, [isConnected, sendMessage]);
 
   return (
     <div className={`TeamCanvas ${isSidebarOpen ? 'sidebar-open' : ''}`}>
-      <NoteHeader onBack={() => {}} onShare={() => {}} onChat={() => {}} onMenu={handleMenuClick} onSave={handleSave} />
+      {connectionError && <div className="error">{connectionError}</div>}
+      <NoteHeader
+        participants={participants}
+        onBack={() => {}}
+        onShare={() => {}}
+        onChat={() => {}}
+        onMenu={handleMenuClick}
+        onSave={handleSave}
+      />
       <CanvasTabs 
         tabs={tabs} 
         activeTab={activeTab} 
