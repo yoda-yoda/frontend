@@ -5,7 +5,7 @@ import './Sidebar.css';
 import AudioChat from '../audio/AudioChat';
 
 const Sidebar = ({ isOpen, onClose }) => {
-  const [activeTeam, setActiveTeam] = useState(null);
+  const [activeTeams, setActiveTeams] = useState([]);
   const [showAudioChat, setShowAudioChat] = useState(false);
   const navigate = useNavigate();
 
@@ -16,7 +16,15 @@ const Sidebar = ({ isOpen, onClose }) => {
   ];
 
   const handleTeamClick = (teamId) => {
-    setActiveTeam(activeTeam === teamId ? null : teamId);
+    setActiveTeams((prevActiveTeams) => {
+      if (prevActiveTeams.includes(teamId)) {
+        // 이미 활성화된 팀이면 비활성화
+        return prevActiveTeams.filter((id) => id !== teamId);
+      } else {
+        // 활성화되지 않은 팀이면 활성화
+        return [...prevActiveTeams, teamId];
+      }
+    });
   };
 
   const handleNoteClick = (teamId) => {
@@ -50,7 +58,7 @@ const Sidebar = ({ isOpen, onClose }) => {
               <p onClick={() => handleTeamClick(team.id)} className="team-name">
                 {team.name}
               </p>
-              <div className={`team-dropdown ${activeTeam === team.id ? 'open' : ''}`}>
+              <div className={`team-dropdown ${activeTeams.includes(team.id) ? 'open' : ''}`}>
                 <p onClick={() => handleNoteClick(team.id)}>TeamNote</p>
                 <p onClick={() => handleCanvasClick(team.id)}>TeamCanvas</p>
                 <p onClick={handleVoiceClick}>TeamVoice</p>
