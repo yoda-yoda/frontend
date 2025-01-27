@@ -18,6 +18,9 @@ import { Awareness } from "y-protocols/awareness";
 
 import { useWebSocket } from '../../context/WebSocketContext';
 
+import { useRecoilValue } from "recoil";
+import { userState } from "../../recoil/UserAtoms";
+
 const TeamNote = () => {
   const { team_id } = useParams();
   const peerIdRef = useRef(uuidv4()); // peerId를 useRef로 안정적으로 유지
@@ -36,6 +39,8 @@ const TeamNote = () => {
   const awareness = useRef(new Awareness(yDoc.current));
 
   const tiptapRef = useRef(null);
+
+  const user = useRecoilValue(userState);
   
   useEffect(() => {
     const roomName = `note-${team_id}`;
@@ -200,33 +205,32 @@ const TeamNote = () => {
     yTitle.set("currentTitle", title);
   };
 
-  // 참여자 추가 및 제거 메시지 전송
   useEffect(() => {
-    if (sendMessage) {
+    if (sendMessage && user && user.isLogin) {
       const payload = {
-        action: 'addParticipant',
-        team_id: team_id, 
-        kind: 'note',
-        participant: peerId, 
-        name: 'Your Name', // 실제 사용자 이름으로 변경
-        profilePicture: 'https://i.namu.wiki/i/qEQTv7w9d-OZ6l9g5pF87sgGMaXwjFaLecd_VeZef-L9jNn86zKPX8CwIhkyPKo4dAp-7f83ZT25fpJr-UeFk0bGyroMp0to_XgnsLD5UZLKDBnqlMuKsUtVctbNLGWYNAtWdJGs7gfN8SLMOnNeuw.webp', // 실제 프로필 사진 경로로 변경
-        color: '#FF0000', // 원하는 색상으로 변경
+        action: "addParticipant",
+        team_id: team_id,
+        kind: "note",
+        participant: user.email,
+        name: user.nickname, // Recoil에서 가져온 닉네임
+        profilePicture: user.profileImage, // Recoil에서 가져온 프로필 이미지
+        color: `#${Math.floor(Math.random() * 16777215).toString(16)}`, // 랜덤 색상 생성
       };
-      console.log('Adding participant:', payload);
+      console.log("Adding participant:", payload);
       sendMessage(JSON.stringify(payload));
 
       return () => {
         const payload = {
-          action: 'removeParticipant',
-          team_id: team_id, 
-          kind: 'note',
-          participant: peerId, 
+          action: "removeParticipant",
+          team_id: team_id,
+          kind: "note",
+          participant: user.email,
         };
-        console.log('Removing participant:', payload);
+        console.log("Removing participant:", payload);
         sendMessage(JSON.stringify(payload));
       };
     }
-  }, [sendMessage, team_id, peerId]);
+  }, [sendMessage, team_id, peerId, userState]);
 
   // 하트비트 구현 (30초마다 서버에 신호 전송)
   useEffect(() => {

@@ -1,4 +1,4 @@
-// WebSocketContext.js
+// src/contexts/WebSocketContext.js
 import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
 
 const WebSocketContext = createContext();

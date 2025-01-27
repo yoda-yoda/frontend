@@ -4,7 +4,7 @@ import './AudioChat.css';
 import audioWebRTCService from '../../service/AudioWebRTCService';
 import audioSocketService from '../../service/AudioSocketService'; // ← 필요 시 import
 
-const AudioChat = ({ onClose }) => {
+const AudioChat = ({ onClose, teamId }) => {
   const [participants, setParticipants] = useState([
     { name: 'Alice', profilePic: '...', volume: 50 },
     { name: 'Bob', profilePic: '...', volume: 50 },
@@ -60,9 +60,9 @@ const AudioChat = ({ onClose }) => {
         });
       })
       .then(() => {
-        console.log("initConnection done -> startCall");
+        console.log("initConnection done -> startCall ", teamId);
         // 3) Offer 보내기
-        audioWebRTCService.startCall();
+        audioWebRTCService.startCall(teamId);
       })
       .catch((err) => {
         console.error("Failed to set up WebSocket or WebRTC:", err);

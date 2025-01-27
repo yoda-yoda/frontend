@@ -59,8 +59,7 @@
 
 .team-dropdown {
     padding-left: 20px;
-    margin-bottom: 10px;
-    /* 드롭다운 항목 간의 간격을 넓힘 */
+    margin-bottom: 3px;
     max-height: 0;
     overflow: hidden;
     transition: max-height 0.3s ease-out;
@@ -68,6 +67,6 @@
 }
 
 .team-dropdown.open {
-    max-height: 120px;
+    max-height: 160px;
     /* 드롭다운이 열릴 때의 최대 높이 설정 */
 }

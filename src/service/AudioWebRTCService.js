@@ -121,7 +121,7 @@ class AudioWebRTCService {
   }
 
   // (선택) 처음 시작 시 오퍼를 만드는 함수
-  async startCall() {
+  async startCall(teamId) {
     try {
       console.log("startCall: creating offer...");
       const offer = await this.peerConnection.createOffer();
@@ -131,6 +131,7 @@ class AudioWebRTCService {
       audioSocketService.sendMessage({
         type: "offer",
         sdp: offer.sdp,
+        teamId: teamId,
       });
     } catch (error) {
       console.error("startCall error:", error);
