@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
 import { Dropdown, Icon } from 'semantic-ui-react';
+import { useRecoilValue } from 'recoil';
+import { authState } from '../../recoil/authAtoms';
 
 function ProfileButton({
-  nickname,
   onOpenNicknameModal,
   onOpenAccountDeleteModal,
   onOpenLogoutConfirm,
 }) {
+  const { nickname } = useRecoilValue(authState);
   const [open, setOpen] = useState(false);
 
   const trigger = (

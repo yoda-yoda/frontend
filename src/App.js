@@ -13,9 +13,11 @@ import LogoutConfirmModal from './components/auth/LogoutConfirmModal';
 import AccountDeleteModal from './components/auth/AccountDeleteModal';
 import NicknameChangeModal from './components/auth/NicknameChangeModal';
 
+import { useRecoilState } from 'recoil';
+import { authState } from './recoil/authAtoms';
+
 function App() {
-  const [isLogin, setIsLogin] = useState(false);
-  const [nickname, setNickname] = useState('');
+  const [auth, setAuth] = useRecoilState(authState);
 
   // 모달 open/close 관리
   const [showLoginModal, setShowLoginModal] = useState(false);
@@ -28,7 +30,7 @@ function App() {
     const accessToken = Cookies.get('accessToken');
     if (accessToken) {
       console.log('accessToken 있음')
-      setIsLogin(true);
+      setAuth(prev => ({ ...prev, isLogin: true }));
 
       // 서버에서 닉네임 가져오기
       axios.get('http://localhost:8080/api/member/profiles', {
@@ -36,39 +38,33 @@ function App() {
         withCredentials: true,
       })
         .then((res) => {
-          setNickname(res.data.nickname);
+          setAuth(prev => ({ ...prev, nickname: res.data.nickname }));
         })
         .catch((err) => {
           console.error('닉네임 조회 실패:', err);
-          setIsLogin(false);
-          setNickname('');
+          setAuth({ isLogin: false, nickname: '' });
         });
     } else {
-      setIsLogin(false);
-      setNickname('');
+      setAuth({ isLogin: false, nickname: '' });
     }
-  }, [setIsLogin, setNickname]);
+  }, [setAuth]);
 
   // 로그아웃 완료
   const handleLogoutSuccess = () => {
-    setIsLogin(false);
-    setNickname('');
+    setAuth({ isLogin: false, nickname: '' });
   };
 
   // 회원탈퇴 완료
   const handleDeleteSuccess = () => {
-    setIsLogin(false);
-    setNickname('');
+    setAuth({ isLogin: false, nickname: '' });
   };
 
   // 닉네임 변경
   const handleNicknameUpdate = (newNickname) => {
-    setNickname(newNickname);
+    setAuth(prev => ({ ...prev, nickname: newNickname }));
   };
 
   const sharedProps = {
-    isLogin,
-    nickname,
     openLoginModal: () => setShowLoginModal(true),
     openLogoutModal: () => setShowLogoutModal(true),
     openAccountDeleteModal: () => setShowAccountDeleteModal(true),
@@ -102,7 +98,7 @@ function App() {
       <NicknameChangeModal
         open={showNicknameModal}
         onClose={() => setShowNicknameModal(false)}
-        currentNickname={nickname}
+        currentNickname={auth.nickname}
         onNicknameUpdate={handleNicknameUpdate}
       />
     </BrowserRouter>

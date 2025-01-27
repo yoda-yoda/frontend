@@ -1,13 +1,17 @@
 import React from 'react';
 import { Modal, Button, Header, Icon } from 'semantic-ui-react';
 import { logoutUser } from '../../recoil/authApi';
+import { useSetRecoilState } from 'recoil';
+import { authState } from '../../recoil/authAtoms';
 
-function LogoutConfirmModal({ open, onClose, onLogoutSuccess }) {
+function LogoutConfirmModal({ open, onClose}) {
+  const setAuth = useSetRecoilState(authState);
+
   const handleLogout = async () => {
     try {
       const res = await logoutUser(); // /api/auth/logout 호출
       console.log('로그아웃 완료:', res);
-      onLogoutSuccess(); // 상위 컴포넌트에서 로그인 false 처리 등
+      setAuth({ isLogin: false, nickname: '' }); // recoil 업데이트
       onClose();
     } catch (error) {
       console.error('로그아웃 실패:', error);

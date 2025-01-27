@@ -3,8 +3,6 @@ import MainHeader from '../components/common/MainHeader';
 
 const Main = ({
   // App.js 에서 내려받은 prop들
-  isLogin,
-  nickname,
   openLoginModal,
   openLogoutModal,
   openAccountDeleteModal,
@@ -26,8 +24,6 @@ const Main = ({
       onBack={handleBack}
       onMenu={handleMenu}
       logoSrc="/path/to/your/logo.png"
-      isLogin={isLogin}
-      nickname={nickname}
       openLoginModal={openLoginModal}
       openLogoutModal={openLogoutModal}
       openAccountDeleteModal={openAccountDeleteModal}
