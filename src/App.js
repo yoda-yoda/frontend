@@ -47,7 +47,7 @@ function App() {
       setIsLogin(false);
       setNickname('');
     }
-  }, []);
+  }, [setIsLogin, setNickname]);
 
   // 로그아웃 완료
   const handleLogoutSuccess = () => {
