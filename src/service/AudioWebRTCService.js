@@ -84,6 +84,11 @@ class AudioWebRTCService {
   async handleSocketMessage(message) {
     console.log("WebSocket message received in AudioWebRTCService:", message);
 
+    if (!this.peerConnection) {
+      console.warn("No peerConnection available. Ignoring message:", message);
+      return;
+    }
+
     if (message.type === "offer") {
       // 서버가 re-offer (또는 처음부터 서버가 offerer) 보낼 수도 있으므로 처리
       console.log("[Client] got offer from server. Setting remote desc...");
@@ -118,6 +123,7 @@ class AudioWebRTCService {
       await this.peerConnection.addIceCandidate(candidate);
       console.log("Remote ICE candidate added!");
     }
+    return;
   }
 
   // (선택) 처음 시작 시 오퍼를 만드는 함수
@@ -131,7 +137,7 @@ class AudioWebRTCService {
       audioSocketService.sendMessage({
         type: "offer",
         sdp: offer.sdp,
-        teamId: teamId,
+        teamId: String(teamId),
       });
     } catch (error) {
       console.error("startCall error:", error);

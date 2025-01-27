@@ -114,3 +114,28 @@
 .audio-chat .btn:hover {
     background-color: #272a33;
 }
+
+.participants {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.participant {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.profile-pic {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+}
+
+.volume-slider {
+    width: 100px;
+    /* 슬라이더의 너비를 줄임 */
+    height: 5px;
+    /* 슬라이더의 높이를 줄임 */
+}

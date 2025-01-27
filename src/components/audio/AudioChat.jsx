@@ -1,8 +1,12 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { MdCallEnd } from 'react-icons/md';
 import './AudioChat.css';
 import audioWebRTCService from '../../service/AudioWebRTCService';
-import audioSocketService from '../../service/AudioSocketService'; // ← 필요 시 import
+import audioSocketService from '../../service/AudioSocketService';
+import { useWebSocket } from '../../context/WebSocketContext';
+
+import { useRecoilValue } from 'recoil';
+import { userState } from '../../recoil/UserAtoms';
 
 const AudioChat = ({ onClose, teamId }) => {
   const [participants, setParticipants] = useState([
@@ -14,6 +18,10 @@ const AudioChat = ({ onClose, teamId }) => {
   const remoteAudioRef = useRef(null);
   const audioContextRef = useRef(null);
   const gainNodesRef = useRef([]);
+  const { sendMessage, addMessageListener, isConnected } = useWebSocket();
+  const messageHandlerRef = useRef(null);
+  
+  const user = useRecoilValue(userState);
 
   useEffect(() => {
     audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)();
@@ -36,9 +44,11 @@ const AudioChat = ({ onClose, teamId }) => {
         console.log("WebSocket is open. Now initConnection...");
 
         // 메시지 핸들러 등록 (이 타이밍에 등록해도 됨)
-        audioSocketService.addMessageHandler((msg) => {
+        const messageHandler = (msg) => {
           audioWebRTCService.handleSocketMessage(msg);
-        });
+        };
+        messageHandlerRef.current = messageHandler;
+        audioSocketService.addMessageHandler(messageHandler);
 
         // 2) WebRTC 연결 초기화
         return audioWebRTCService.initConnection(iceServers, (remoteStream) => {
@@ -74,8 +84,14 @@ const AudioChat = ({ onClose, teamId }) => {
       if (audioContextRef.current) {
         audioContextRef.current.close();
       }
+      if (messageHandlerRef.current) {
+        audioSocketService.removeMessageHandler(messageHandlerRef.current);
+      }
+      audioSocketService.disconnect();
     };
   }, []);
+
+
 
   const handleVolumeChange = (index, event) => {
     const newVolume = event.target.value;
@@ -90,14 +106,80 @@ const AudioChat = ({ onClose, teamId }) => {
     }
   };
 
+  const handleMessage = useCallback((message) => {
+    console.log('handleMessage called with:', message);
+    if (message.action === 'updateAudioParticipants') {
+      const { audioParticipants } = message;
+      if (Array.isArray(audioParticipants)) {
+        console.log('Updating participants from updateAudioParticipants:', audioParticipants);
+        setParticipants(audioParticipants);
+      }
+    }
+    if (message.action === 'getAudioParticipants') {
+      // 서버가 participants => UI에 표시
+      const { audioParticipants } = message;
+      if (Array.isArray(audioParticipants)) {
+        console.log('Setting participants from getAudioParticipants:', audioParticipants);
+        setParticipants(audioParticipants);
+      }
+    }
+  }, [teamId]);
+
+  useEffect(() => {
+    const unsubscribe = addMessageListener(handleMessage);
+    console.log('Listener registered for Team:', teamId);
+
+    if (sendMessage) {
+      const payload = {
+        action: 'getAudioParticipants',
+        team_id: String(teamId),
+        kind: 'audio',
+      };
+      console.log('Sending getAudioParticipants:', payload);
+      sendMessage(JSON.stringify(payload));
+    }
+
+    return () => {
+      unsubscribe && unsubscribe();
+    };
+  }, [addMessageListener, teamId, sendMessage, handleMessage]);
+
+  useEffect(() => {
+    if (isConnected && user.isLogin) {
+      const payload = {
+        action: 'addAudioParticipant',
+        team_id: String(teamId),
+        kind: 'audio',
+        participant: user.email,
+        name: user.nickname, // Recoil에서 가져온 닉네임
+        profilePicture: user.profileImage, // Recoil에서 가져온 프로필 이미지
+        color: `#${Math.floor(Math.random() * 16777215).toString(16)}`, // 랜덤 색상 생성
+      };
+      console.log('Adding audio participant:', payload);
+      sendMessage(JSON.stringify(payload));
+
+      return () => {
+        const payload = {
+          action: 'removeAudioParticipant',
+          team_id: String(teamId),
+          kind: 'audio',
+          participant: user.email,
+        };
+        console.log('Removing audio participant:', payload);
+        sendMessage(JSON.stringify(payload));
+      };
+    }
+  }, [isConnected, sendMessage, teamId, user]);  
+
   return (
     <div className="audio-chat p-4">
       <div className="participants">
         {participants.map((participant, index) => (
           <div key={index} className="participant">
-            <img src={participant.profilePic} alt={participant.name} className="profile-pic" />
+            <img src={participant.profilePicture} alt={participant.name} className="profile-pic" />
             <p>{participant.name}</p>
             <input
+              className='volume-slider'
               type="range"
               min="0"
               max="100"
