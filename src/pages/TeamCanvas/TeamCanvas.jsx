@@ -19,7 +19,14 @@ import { Awareness } from 'y-protocols/awareness';
 import { useWebSocket } from '../../context/WebSocketContext';
 import { v4 as uuidv4 } from 'uuid';
 
-const TeamCanvas = () => {
+import LogoutConfirmModal from '../../components/auth/LogoutConfirmModal';
+
+const TeamCanvas = ({
+  openLoginModal,
+  openLogoutModal,
+  openAccountDeleteModal,
+  openNicknameModal,
+}) => {
   const { teamId } = useParams();
   const peerId = useRef(uuidv4()).current; // peerId를 useRef로 안정적으로 유지
   const [tool, setTool] = useState('pencil');
@@ -296,6 +303,10 @@ const TeamCanvas = () => {
         onChat={() => {}}
         onMenu={handleMenuClick}
         onSave={handleSave}
+        onOpenLoginModal={openLoginModal}
+        onOpenLogoutModal={openLogoutModal}
+        onOpenAccountDeleteModal={openAccountDeleteModal}
+        onOpenNicknameModal={openNicknameModal}
       />
       <CanvasTabs 
         tabs={tabs} 

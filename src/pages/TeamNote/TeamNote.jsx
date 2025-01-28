@@ -21,7 +21,13 @@ import { useWebSocket } from '../../context/WebSocketContext';
 import { useRecoilValue } from "recoil";
 import { userState } from "../../recoil/UserAtoms";
 
-const TeamNote = () => {
+const TeamNote = ({
+  openLoginModal,
+  openLogoutModal,
+  openAccountDeleteModal,
+  openNicknameModal,
+}) => {
+
   const { team_id } = useParams();
   const peerIdRef = useRef(uuidv4()); // peerId를 useRef로 안정적으로 유지
   const peerId = peerIdRef.current;
@@ -41,6 +47,7 @@ const TeamNote = () => {
   const tiptapRef = useRef(null);
 
   const user = useRecoilValue(userState);
+  
   
   useEffect(() => {
     const roomName = `note-${team_id}`;
@@ -259,6 +266,10 @@ const TeamNote = () => {
         onChat={handleChat}
         onMenu={handleMenuClick}
         onSave={() => tiptapRef.current?.handleSave()}
+        onOpenLoginModal={openLoginModal}
+        onOpenLogoutModal={openLogoutModal}
+        onOpenAccountDeleteModal={openAccountDeleteModal}
+        onOpenNicknameModal={openNicknameModal}
       />
 
       <main className="container">

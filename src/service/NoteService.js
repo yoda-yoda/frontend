@@ -3,6 +3,7 @@ import axios from 'axios';
 // const API_BASE_URL = 'http://localhost:4000';
 const API_BASE_URL = 'http://172.30.1.64:8082/go';
 
+
 const saveNote = async (note) => {
   try {
     const response = await axios.post(`${API_BASE_URL}/note`, note, {

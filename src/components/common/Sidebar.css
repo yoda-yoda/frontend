@@ -8,7 +8,6 @@
     box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
     transition: transform 0.3s ease;
     z-index: 1000;
-    /* 사이드바의 z-index 설정 */
     display: flex;
     flex-direction: column;
     justify-content: space-between;
@@ -42,7 +41,6 @@
 .sidebar-content {
     flex-grow: 1;
     color: black;
-    /* 글씨 색상을 검은색으로 설정 */
 }
 
 .sidebar-footer {
@@ -52,21 +50,67 @@
 .team-name {
     cursor: pointer;
     font-weight: normal;
-    /* 폰트를 더 얇게 설정 */
     margin-bottom: 2px;
-    /* 팀 이름 간의 간격을 넓힘 */
+    user-select: none; /* 텍스트 선택 방지 */
 }
 
 .team-dropdown {
     padding-left: 20px;
-    margin-bottom: 3px;
+    margin-bottom: 10px;
     max-height: 0;
     overflow: hidden;
-    transition: max-height 0.3s ease-out;
-    /* 부드러운 드롭다운 애니메이션 */
+    transition: max-height 0.5s ease; /* 열릴 때 속도 느리게 */
 }
 
 .team-dropdown.open {
     max-height: 160px;
-    /* 드롭다운이 열릴 때의 최대 높이 설정 */
+    transition: max-height 0.5s ease; /* 닫힐 때 속도 유지 */
+}
+
+.team-dropdown p {
+    margin: 5px 0;
+    cursor: pointer; /* 마우스 커서를 손가락 모양으로 변경 */
+    transition: background-color 0.2s ease, color 0.2s ease, transform 0.5s ease;
+    user-select: none; /* 텍스트 선택 방지 */
+}
+
+.team-dropdown p:hover {
+    background-color: #e0e0e0; /* 호버 시 배경색 변경 */
+    color: #333; /* 호버 시 텍스트 색상 변경 */
+    transform: scale(1.02); /* 약간 확대하여 강조 */
+}
+
+/* 토글 버튼 스타일 */
+.toggle-button {
+    position: fixed; /* 버튼이 화면에 고정되도록 설정 */
+    top: 50%; /* 버튼이 화면의 중앙에 위치 */
+    left: 250px; /* 사이드바가 열려 있을 때 위치 */
+    transform: translateY(-50%);
+    width: 20px; /* 버튼 너비 */
+    height: 60px; /* 버튼 높이 */
+    background-color: rgba(0, 0, 0, 0.7); /* 70% 투명도 적용 */
+    border: none;
+    border-radius: 5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 1100;
+    transition: left 0.3s ease, background-color 0.3s ease;
+}
+
+/* 사이드바 닫혔을 때 버튼 위치 */
+.sidebar.closed ~ .toggle-button {
+    left: 0px; /* 사이드바 옆에 고정 */
+}
+
+/* 호버 시 버튼 밝기 */
+.toggle-button:hover {
+    background-color: rgba(0, 0, 0, 0.9); /* 90% 투명도 */
+}
+
+/* 버튼 안의 화살표 아이콘 */
+.toggle-button svg {
+    color: white;
+    font-size: 16px;
 }
