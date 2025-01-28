@@ -2,9 +2,12 @@
 import React, { useState, useEffect } from 'react';
 import { Modal, Button, Header, Form, Icon } from 'semantic-ui-react';
 import { updateNickname } from '../../recoil/authApi';
+import { useSetRecoilState } from 'recoil';
+import { authState } from '../../recoil/authAtoms';
 
-function NicknameChangeModal({ open, onClose, currentNickname, onNicknameUpdate }) {
+function NicknameChangeModal({ open, onClose, currentNickname}) {
   const [nickname, setNickname] = useState('');
+  const setAuth = useSetRecoilState(authState);
 
   // 모달 열릴 때 현재 닉네임 세팅
   useEffect(() => {
@@ -18,8 +21,7 @@ function NicknameChangeModal({ open, onClose, currentNickname, onNicknameUpdate 
       const res = await updateNickname(nickname);
       console.log('닉네임 변경 완료:', res);
 
-      // 상위에서 nickname 반영
-      onNicknameUpdate(nickname);
+      setAuth(prev => ({ ...prev, nickname })); // recoil 상태 업데이트
       onClose();
     } catch (error) {
       console.error('닉네임 변경 실패:', error);

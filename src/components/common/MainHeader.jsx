@@ -7,18 +7,20 @@ import './MainHeader.css';
 import LoginButton from '../auth/LoginButton';
 import ProfileButton from '../auth/ProfileButton';
 
+import { useRecoilValue } from 'recoil';
+import { authState } from '../../recoil/authAtoms';
+
 const MainHeader = ({
   onBack,
   logoSrc,
   // App에서 내려온 props
-  isLogin,
-  nickname,
   openLoginModal,
   openLogoutModal,
   openAccountDeleteModal,
   openNicknameModal,
 }) => {
   const [isSidebarOpen, setIsSidebarOpen] = React.useState(false);
+  const { isLogin, nickname } = useRecoilValue(authState);
 
   const handleMenuClick = () => {
     setIsSidebarOpen(!isSidebarOpen);
@@ -29,14 +31,6 @@ const MainHeader = ({
       <div className="header flex items-center justify-between px-4 py-2 bg-white border-b border-gray-300">
         {/* 왼쪽 */}
         <div className="flex items-center gap-2">
-          <button
-            className="flex items-center justify-center w-8 h-8 rounded-md border 
-                       border-gray-300 bg-gray-100 text-gray-600 
-                       hover:text-gray-900 hover:bg-gray-200"
-            onClick={handleMenuClick}
-          >
-            <AiOutlineMenu size={18} />
-          </button>
           <img
             src={"/accord-removebg.png"}
             alt="Logo"

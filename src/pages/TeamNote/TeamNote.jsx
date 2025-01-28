@@ -18,7 +18,12 @@ import { Awareness } from "y-protocols/awareness";
 
 import { useWebSocket } from '../../context/WebSocketContext';
 
-const TeamNote = () => {
+const TeamNote = ({
+  openLoginModal,
+  openLogoutModal,
+  openAccountDeleteModal,
+  openNicknameModal,
+}) => {
   const { team_id } = useParams();
   const peerIdRef = useRef(uuidv4()); // peerId를 useRef로 안정적으로 유지
   const peerId = peerIdRef.current;
@@ -36,6 +41,7 @@ const TeamNote = () => {
   const awareness = useRef(new Awareness(yDoc.current));
 
   const tiptapRef = useRef(null);
+  
   
   useEffect(() => {
     const roomName = `note-${team_id}`;
@@ -255,6 +261,10 @@ const TeamNote = () => {
         onChat={handleChat}
         onMenu={handleMenuClick}
         onSave={() => tiptapRef.current?.handleSave()}
+        onOpenLoginModal={openLoginModal}
+        onOpenLogoutModal={openLogoutModal}
+        onOpenAccountDeleteModal={openAccountDeleteModal}
+        onOpenNicknameModal={openNicknameModal}
       />
 
       <main className="container">

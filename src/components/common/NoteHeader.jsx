@@ -7,6 +7,9 @@ import {
   AiOutlineSave,
 } from "react-icons/ai";
 
+import { useRecoilValue } from 'recoil';
+import { authState } from '../../recoil/authAtoms';
+
 import LoginButton from "../auth/LoginButton";
 import ProfileButton from "../auth/ProfileButton";
 
@@ -18,33 +21,17 @@ const NoteHeader = ({
   onMenu,
   onSave,
   // App에서 내려온 props
-  isLogin,
-  nickname,
-  openLoginModal,
-  openLogoutModal,
-  openAccountDeleteModal,
-  openNicknameModal,
+  onOpenLoginModal,
+  onOpenLogoutModal,
+  onOpenAccountDeleteModal,
+  onOpenNicknameModal,
 }) => {
+  const { isLogin, nickname } = useRecoilValue(authState);
+
   return (
     <div className="flex items-center justify-between px-4 py-2 bg-white border-b border-gray-300">
       {/* 왼쪽 */}
       <div className="flex items-center gap-2">
-        <button
-          className="flex items-center justify-center w-8 h-8 rounded-md border 
-                     border-gray-300 bg-gray-100 text-gray-600 
-                     hover:text-gray-900 hover:bg-gray-200"
-          onClick={onMenu}
-        >
-          <AiOutlineMenu size={18} />
-        </button>
-        <button
-          className="flex items-center justify-center w-8 h-8 rounded-md border 
-                     border-gray-300 bg-gray-100 text-gray-600 
-                     hover:text-gray-900 hover:bg-gray-200"
-          onClick={onBack}
-        >
-          <AiOutlineArrowLeft size={18} />
-        </button>
         <img
           src="/accord-removebg.png"
           alt="Logo"
@@ -97,12 +84,12 @@ const NoteHeader = ({
         {isLogin ? (
           <ProfileButton
             nickname={nickname}
-            onOpenNicknameModal={openNicknameModal}
-            onOpenAccountDeleteModal={openAccountDeleteModal}
-            onOpenLogoutConfirm={openLogoutModal}
+            onOpenNicknameModal={onOpenNicknameModal}
+            onOpenAccountDeleteModal={onOpenAccountDeleteModal}
+            onOpenLogoutConfirm={onOpenLogoutModal}
           />
         ) : (
-          <LoginButton onClick={openLoginModal} />
+          <LoginButton onClick={onOpenLoginModal} />
         )}
       </div>
     </div>

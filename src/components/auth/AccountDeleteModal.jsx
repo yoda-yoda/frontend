@@ -1,13 +1,17 @@
 import React from 'react';
 import { Modal, Button, Header, Icon } from 'semantic-ui-react';
 import { deleteUser } from '../../recoil/authApi';
+import { useSetRecoilState } from 'recoil';
+import { authState } from '../../recoil/authAtoms';
 
-function AccountDeleteModal({ open, onClose, onDeleteSuccess }) {
+function AccountDeleteModal({ open, onClose}) {
+  const setAuth = useSetRecoilState(authState);
+
   const handleDelete = async () => {
     try {
       const res = await deleteUser(); // DELETE /auth
       console.log('탈퇴 완료:', res);
-      onDeleteSuccess(); // 상위에서 로그인 상태나 쿠키 제거
+      setAuth({ isLogin: false, nickname: '' }); // 상위에서 로그인 상태나 쿠키 제거
       onClose();         // 모달 닫기
     } catch (error) {
       console.error('회원탈퇴 실패:', error);
