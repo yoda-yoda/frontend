@@ -1,4 +1,4 @@
-// WebSocketContext.js
+// src/contexts/WebSocketContext.js
 import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
 
 const WebSocketContext = createContext();
@@ -10,7 +10,7 @@ export const WebSocketProvider = ({ children }) => {
   const [connectionError, setConnectionError] = useState(null);
   const reconnectAttempts = useRef(0);
   const maxReconnectAttempts = 5;
-  const connectingRef = useRef(false); // 연결 중인지 추적
+  const connectingRef = useRef(false);
 
   const messageListenersRef = useRef([]);
 

@@ -2,11 +2,15 @@ import React, { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Cookies from 'js-cookie';
 import axios from 'axios';
+import { useRecoilState } from 'recoil';
+
+import { userState } from './recoil/UserAtoms';
 
 import TeamNote from './pages/TeamNote/TeamNote';
 import TeamCanvas from './pages/TeamCanvas/TeamCanvas';
 import Main from './pages/Main';
 import { WebSocketProvider } from './context/WebSocketContext';
+import { AudioParticipantsProvider } from './context/AudioParticipantsContext';
 
 import LoginModal from './components/auth/LoginModal';
 import LogoutConfirmModal from './components/auth/LogoutConfirmModal';
@@ -17,7 +21,13 @@ import { useRecoilState } from 'recoil';
 import { authState } from './recoil/authAtoms';
 
 function App() {
+
+  const [user, setUser] = useRecoilState(userState);
+  const [isLogin, setIsLogin] = useState(false);
+  const [nickname, setNickname] = useState('');
+
   const [auth, setAuth] = useRecoilState(authState);
+
 
   // 모달 open/close 관리
   const [showLoginModal, setShowLoginModal] = useState(false);
@@ -33,12 +43,24 @@ function App() {
       setAuth(prev => ({ ...prev, isLogin: true }));
 
       // 서버에서 닉네임 가져오기
-      axios.get('http://localhost:8080/api/member/profiles', {
+      axios.get('http://localhost:8080/api/member/userinfos', {
         headers: { Authorization: `Bearer ${accessToken}` },
         withCredentials: true,
       })
         .then((res) => {
-          setAuth(prev => ({ ...prev, nickname: res.data.nickname }));
+
+          console.log('조회 성공:', res);
+          const { memberId, email, nickname, profileImage } = res.data.memberInfo;
+          setUser({
+            isLogin: true,
+            memberId,
+            email,
+            nickname,
+            profileImage,
+          });
+
+          setAuth(prev => ({ ...prev, nickname: nickname }));
+
         })
         .catch((err) => {
           console.error('닉네임 조회 실패:', err);
@@ -73,12 +95,15 @@ function App() {
 
   return (
   <WebSocketProvider>
-    <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<Main {...sharedProps} />} />
-        <Route path="/note/:team_id" element={<TeamNote {...sharedProps} />} />
-        <Route path="/canvas/:teamId" element={<TeamCanvas {...sharedProps} />} />
-      </Routes>
+    <AudioParticipantsProvider>
+      <BrowserRouter>
+        <Routes>
+          <Route path="/" element={<Main {...sharedProps} />} />
+          <Route path="/note/:team_id" element={<TeamNote {...sharedProps} />} />
+          <Route path="/canvas/:teamId" element={<TeamCanvas {...sharedProps} />} />
+        </Routes>
+
+
 
       {/* 모달들 */}
       <LoginModal
@@ -102,6 +127,7 @@ function App() {
         onNicknameUpdate={handleNicknameUpdate}
       />
     </BrowserRouter>
+    </AudioParticipantsProvider>
   </WebSocketProvider>
 
   );

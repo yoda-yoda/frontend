@@ -1,7 +1,8 @@
 import axios from 'axios';
 
 // const API_BASE_URL = 'http://localhost:4000';
-const API_BASE_URL = 'http://192.168.48.1:8082/go';
+const API_BASE_URL = 'http://172.30.1.64:8082/go';
+
 
 const saveNote = async (note) => {
   try {

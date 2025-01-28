@@ -63,7 +63,7 @@
 }
 
 .team-dropdown.open {
-    max-height: 500px; /* 충분히 큰 값으로 설정 */
+    max-height: 160px;
     transition: max-height 0.5s ease; /* 닫힐 때 속도 유지 */
 }
 

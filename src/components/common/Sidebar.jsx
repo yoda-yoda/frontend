@@ -8,12 +8,19 @@ const Sidebar = ({ isOpen, onClose }) => {
   const [activeTeams, setActiveTeams] = useState([]);
   const [showAudioChat, setShowAudioChat] = useState(false);
   const navigate = useNavigate();
+  const [selectedTeamId, setSelectedTeamId] = useState(null);
 
   const teams = [
     { id: 1, name: 'Team A' },
     { id: 2, name: 'Team B' },
     { id: 3, name: 'Team C' },
   ];
+
+  const handleVoiceClick = (teamId) => {
+    console.log("Clicked voice on teamId=", teamId);
+    setSelectedTeamId(teamId);
+    setShowAudioChat(true);
+  };
 
   const handleTeamClick = (teamId) => {
     setActiveTeams((prevActiveTeams) => {
@@ -33,10 +40,6 @@ const Sidebar = ({ isOpen, onClose }) => {
 
   const handleCanvasClick = (teamId) => {
     navigate(`/canvas/${teamId}`);
-  };
-
-  const handleVoiceClick = () => {
-    setShowAudioChat(true);
   };
 
   const handleCloseAudioChat = () => {
@@ -68,7 +71,7 @@ const Sidebar = ({ isOpen, onClose }) => {
         </div>
 
         <div className="sidebar-footer">
-          {showAudioChat && <AudioChat onClose={handleCloseAudioChat} />}
+          {showAudioChat && <AudioChat onClose={handleCloseAudioChat} teamId={selectedTeamId} />}
         </div>
       </div>
 

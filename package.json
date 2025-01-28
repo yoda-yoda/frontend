@@ -58,11 +58,10 @@
     "react-router-dom": "^7.1.1",
     "react-scripts": "^5.0.1",
     "recoil": "^0.7.7",
+    "recoil-persist": "^5.1.0",
     "semantic-ui-css": "^2.5.0",
     "semantic-ui-react": "^2.1.5",
-
     "use-image": "^1.1.1",
-
     "uuid": "^11.0.5",
     "y-prosemirror": "^1.2.15",
     "y-protocols": "^1.0.6",
