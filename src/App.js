@@ -17,7 +17,6 @@ import LogoutConfirmModal from './components/auth/LogoutConfirmModal';
 import AccountDeleteModal from './components/auth/AccountDeleteModal';
 import NicknameChangeModal from './components/auth/NicknameChangeModal';
 
-import { useRecoilState } from 'recoil';
 import { authState } from './recoil/authAtoms';
 
 function App() {
@@ -43,7 +42,7 @@ function App() {
       setAuth(prev => ({ ...prev, isLogin: true }));
 
       // 서버에서 닉네임 가져오기
-      axios.get('http://localhost:8080/api/member/userinfos', {
+      axios.get('http://localhost:8082/spring/api/member/userinfos', {
         headers: { Authorization: `Bearer ${accessToken}` },
         withCredentials: true,
       })
