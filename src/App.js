@@ -8,6 +8,7 @@ import { userState } from './recoil/UserAtoms';
 
 import TeamNote from './pages/TeamNote/TeamNote';
 import TeamCanvas from './pages/TeamCanvas/TeamCanvas';
+import AcceptInvitePage from './pages/team/AcceptInvitePage';
 import Main from './pages/Main';
 import { WebSocketProvider } from './context/WebSocketContext';
 import { AudioParticipantsProvider } from './context/AudioParticipantsContext';
@@ -100,6 +101,7 @@ function App() {
           <Route path="/" element={<Main {...sharedProps} />} />
           <Route path="/note/:team_id" element={<TeamNote {...sharedProps} />} />
           <Route path="/canvas/:teamId" element={<TeamCanvas {...sharedProps} />} />
+          <Route path="/accept-invite/:teamId" element={<AcceptInvitePage />} />
         </Routes>
 
 

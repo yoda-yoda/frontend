@@ -260,6 +260,7 @@ const TeamNote = ({
     <div className={`team-note ${isSidebarOpen ? "sidebar-open" : ""}`}>
       {connectionError && <div className="error">{connectionError}</div>}
       <NoteHeader
+        teamId={team_id}
         participants={participants}
         onBack={handleBack}
         onShare={handleShare}

@@ -297,6 +297,7 @@ const TeamCanvas = ({
     <div className={`TeamCanvas ${isSidebarOpen ? 'sidebar-open' : ''}`}>
       {connectionError && <div className="error">{connectionError}</div>}
       <NoteHeader
+        teamId={teamId}
         participants={participants}
         onBack={() => {}}
         onShare={() => {}}
