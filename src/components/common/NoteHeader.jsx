@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   AiOutlineArrowLeft,
   AiOutlineShareAlt,
@@ -12,8 +12,10 @@ import { authState } from '../../recoil/authAtoms';
 
 import LoginButton from "../auth/LoginButton";
 import ProfileButton from "../auth/ProfileButton";
+import ShareModal from './ShareModal';
 
 const NoteHeader = ({
+  teamId,
   participants = [],
   onBack,
   onShare,
@@ -27,6 +29,15 @@ const NoteHeader = ({
   onOpenNicknameModal,
 }) => {
   const { isLogin, nickname } = useRecoilValue(authState);
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+
+  const handleShareClick = () => {
+    setIsShareModalOpen(true);
+  };
+
+  const handleCloseShareModal = () => {
+    setIsShareModalOpen(false);
+  };
 
   return (
     <div className="flex items-center justify-between px-4 py-2 bg-white border-b border-gray-300">
@@ -66,7 +77,7 @@ const NoteHeader = ({
           className="flex items-center gap-1 h-8 px-2 py-1 rounded-md border 
                      border-gray-300 bg-gray-100 text-gray-600 
                      hover:text-gray-900 hover:bg-gray-200"
-          onClick={onShare}
+          onClick={handleShareClick}
         >
           <span className="text-sm">Share</span>
           <AiOutlineShareAlt size={16} />
@@ -92,6 +103,7 @@ const NoteHeader = ({
           <LoginButton onClick={onOpenLoginModal} />
         )}
       </div>
+      <ShareModal isOpen={isShareModalOpen} onClose={handleCloseShareModal} teamId={teamId} />
     </div>
   );
 };

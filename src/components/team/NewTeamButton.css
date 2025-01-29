@@ -1,0 +1,13 @@
+.new-team-button {
+    background-color: #494e5e;
+    color: white;
+    padding: 8px 16px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.new-team-button:hover {
+    background-color: #3a3e4d;
+}

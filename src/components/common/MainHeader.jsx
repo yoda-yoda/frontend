@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { AiOutlineMenu } from 'react-icons/ai';
 import Sidebar from './Sidebar';
 import './MainHeader.css';
@@ -6,6 +6,8 @@ import './MainHeader.css';
 // 버튼
 import LoginButton from '../auth/LoginButton';
 import ProfileButton from '../auth/ProfileButton';
+import NewTeamButton from '../team/NewTeamButton';
+import NewTeamModal from '../team/NewTeamModal';
 
 import { useRecoilValue } from 'recoil';
 import { authState } from '../../recoil/authAtoms';
@@ -20,10 +22,19 @@ const MainHeader = ({
   openNicknameModal,
 }) => {
   const [isSidebarOpen, setIsSidebarOpen] = React.useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const { isLogin, nickname } = useRecoilValue(authState);
 
   const handleMenuClick = () => {
     setIsSidebarOpen(!isSidebarOpen);
+  };
+
+  const openNewTeamModal = () => {
+    setIsModalOpen(true);
+  };
+
+  const closeNewTeamModal = () => {
+    setIsModalOpen(false);
   };
 
   return (
@@ -41,12 +52,15 @@ const MainHeader = ({
         {/* 오른쪽 */}
         <div className="flex items-center gap-2">
           {isLogin ? (
-            <ProfileButton
-              nickname={nickname}
-              onOpenNicknameModal={openNicknameModal}
-              onOpenAccountDeleteModal={openAccountDeleteModal}
-              onOpenLogoutConfirm={openLogoutModal}
-            />
+            <>
+              <NewTeamButton onClick={openNewTeamModal} />
+              <ProfileButton
+                nickname={nickname}
+                onOpenNicknameModal={openNicknameModal}
+                onOpenAccountDeleteModal={openAccountDeleteModal}
+                onOpenLogoutConfirm={openLogoutModal}
+              />
+            </>
           ) : (
             <LoginButton onClick={openLoginModal} />
           )}
@@ -54,6 +68,7 @@ const MainHeader = ({
       </div>
 
       <Sidebar isOpen={isSidebarOpen} onClose={handleMenuClick} />
+      <NewTeamModal isOpen={isModalOpen} onClose={closeNewTeamModal} />
     </div>
   );
 };

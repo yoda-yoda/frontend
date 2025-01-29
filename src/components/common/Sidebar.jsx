@@ -1,20 +1,34 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { AiOutlineClose, AiOutlineLeft, AiOutlineRight } from 'react-icons/ai';
 import { useNavigate } from 'react-router-dom';
 import './Sidebar.css';
 import AudioChat from '../audio/AudioChat';
+import TeamList from './TeamList';
+import TeamService from '../../service/TeamService';
+import { useRecoilValue } from 'recoil';
+import { userState } from '../../recoil/UserAtoms';
 
 const Sidebar = ({ isOpen, onClose }) => {
   const [activeTeams, setActiveTeams] = useState([]);
   const [showAudioChat, setShowAudioChat] = useState(false);
   const navigate = useNavigate();
   const [selectedTeamId, setSelectedTeamId] = useState(null);
+  const [teams, setTeams] = useState([]);
+  const user = useRecoilValue(userState);
 
-  const teams = [
-    { id: 1, name: 'Team A' },
-    { id: 2, name: 'Team B' },
-    { id: 3, name: 'Team C' },
-  ];
+  useEffect(() => {
+    const fetchTeams = async () => {
+      try {
+        const response = await TeamService.getTeamsByMemberId(user.memberId);
+        console.log('Fetched teams:', response);
+        setTeams(response);
+      } catch (error) {
+        console.error('Error fetching teams:', error);
+      }
+    };
+
+    fetchTeams();
+  }, [user.memberId]);
 
   const handleVoiceClick = (teamId) => {
     console.log("Clicked voice on teamId=", teamId);
@@ -59,7 +73,7 @@ const Sidebar = ({ isOpen, onClose }) => {
           {teams.map((team) => (
             <div key={team.id}>
               <p onClick={() => handleTeamClick(team.id)} className="team-name">
-                {team.name}
+                {team.teamName}
               </p>
               <div className={`team-dropdown ${activeTeams.includes(team.id) ? 'open' : ''}`}>
                 <p onClick={() => handleNoteClick(team.id)}>TeamNote</p>

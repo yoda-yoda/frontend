@@ -8,6 +8,7 @@ import { userState } from './recoil/UserAtoms';
 
 import TeamNote from './pages/TeamNote/TeamNote';
 import TeamCanvas from './pages/TeamCanvas/TeamCanvas';
+import AcceptInvitePage from './pages/team/AcceptInvitePage';
 import Main from './pages/Main';
 import { WebSocketProvider } from './context/WebSocketContext';
 import { AudioParticipantsProvider } from './context/AudioParticipantsContext';
@@ -17,7 +18,6 @@ import LogoutConfirmModal from './components/auth/LogoutConfirmModal';
 import AccountDeleteModal from './components/auth/AccountDeleteModal';
 import NicknameChangeModal from './components/auth/NicknameChangeModal';
 
-import { useRecoilState } from 'recoil';
 import { authState } from './recoil/authAtoms';
 
 function App() {
@@ -43,7 +43,7 @@ function App() {
       setAuth(prev => ({ ...prev, isLogin: true }));
 
       // 서버에서 닉네임 가져오기
-      axios.get('http://localhost:8080/api/member/userinfos', {
+      axios.get('http://localhost:8082/spring/api/member/userinfos', {
         headers: { Authorization: `Bearer ${accessToken}` },
         withCredentials: true,
       })
@@ -101,6 +101,7 @@ function App() {
           <Route path="/" element={<Main {...sharedProps} />} />
           <Route path="/note/:team_id" element={<TeamNote {...sharedProps} />} />
           <Route path="/canvas/:teamId" element={<TeamCanvas {...sharedProps} />} />
+          <Route path="/accept-invite/:teamId" element={<AcceptInvitePage />} />
         </Routes>
 
 
